@@ -1,0 +1,27 @@
+{
+  "name": "bunneymen",
+  "version": "0.0.0",
+  "source": "src/index.ts",
+  "main": "dist/main.js",
+  "types": "dist/types.d.ts",
+  "files": [
+    "dist"
+  ],
+  "alias": {
+    "src": "./src"
+  },
+  "repository": "git@github.com:element-fi/bunneymen.git",
+  "scripts": {
+    "build": "tsc",
+    "start": "ts-node -r dotenv/config -r tsconfig-paths/register src/index.ts",
+    "watch": "nodemon -r dotenv/config -r tsconfig-paths/register src/index.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^18.11.18",
+    "dotenv": "^16.0.3",
+    "nodemon": "^2.0.20",
+    "ts-node": "^10.9.1",
+    "tsconfig-paths": "^4.1.2",
+    "typescript": "^4.9.4"
+  }
+}
