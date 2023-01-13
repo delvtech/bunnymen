@@ -20,6 +20,8 @@
     "inlineSourceMap": true,
     "inlineSources": true,
     "esModuleInterop": true,
+    "skipLibCheck": true,
+    "strict": true,
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "**/*.spec.ts"]
