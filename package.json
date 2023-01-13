@@ -33,9 +33,12 @@
     "@libp2p/mdns": "^3.0.0",
     "@libp2p/mplex": "^5.2.0",
     "@libp2p/tcp": "^3.0.6",
-    "ipfs-core": "^0.16.0",
+    "fast-json-stable-stringify": "^2.1.0",
     "ipfs-core-types": "^0.14.0",
+    "ipfs-core": "^0.16.0",
+    "it-to-buffer": "^3.0.0",
     "libp2p": "^0.39.0",
+    "multiformats": "^9.6.5",
     "uint8arrays": "^3.0.0"
   }
 }

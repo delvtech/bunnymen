@@ -1,56 +1,127 @@
-import { Initializer } from './initializer'
-import { Loader } from './loader'
+import { ILoader } from './loader'
+import { Node } from './node'
+import { Cache } from './cache'
 
-// placeholder
-class Cache<TData extends any = any> {
-  get(): TData {
-    return 'data' as TData
-  }
-}
+export type Fetcher<TData extends any = any> = () => TData | Promise<TData>
 
+// 'static' = never stale
 export type Frequency = number | 'static'
 
 export interface IDatasetOptions {
-  initializer?: Initializer
-  cid?: string
+  initializer?: Fetcher
+  initialContentId?: string
   /**
-   * Number of blocks until the data is considered stale. Set to `"static"` to
+   * Number of ms until the data is considered stale. Set to `"static"` to
    * prevent the data from ever going stale.
    */
   frequency?: Frequency
 }
 
-export class Dataset<TData extends any = any> {
+export interface IDataset<TData extends any = any> {
+  init: () => void
+  get: () => Promise<TData>
+  isStale: () => boolean
+}
+
+export class Dataset<TData extends any = any, TNewData extends any = TData>
+  implements IDataset
+{
   node: Node
-  initializer?: Initializer
-  fetcher: Fetcher
-  loader: Loader
-  cid?: string
+  channel: string
+
+  // keep this around to rerun during validation
+  initializer?: Fetcher<TNewData>
+
+  fetcher: Fetcher<TNewData>
+  loader: ILoader<TData, TNewData>
+  currentCID?: string
   cache: Cache<TData>
-  // 'static' = never stale
+
+  // ms
   frequency: Frequency
+
+  // ms
+  lastUpdated = 0
 
   constructor(
     node: Node,
+    channel: string,
     fetcher: Fetcher,
-    loader: Loader,
+    loader: ILoader,
     options?: IDatasetOptions
   ) {
-    const { initializer, cid, frequency = 'static' } = options || {}
+    const {
+      initializer,
+      initialContentId,
+      frequency = 'static',
+    } = options || {}
+
     this.node = node
+    this.channel = channel
     this.initializer = initializer
     this.fetcher = fetcher
     this.loader = loader
-    this.cid === cid
+    this.currentCID = initialContentId
     this.cache = new Cache()
     this.frequency = frequency
   }
 
-  get(): TData {
-    return this.cache.get()
+  /**
+   * Factory method to return a strongly typed instance.
+   */
+  static create<TData extends any = any, TNewData extends any = TData>(
+    node: Node,
+    channel: string,
+    fetcher: Fetcher<TNewData>,
+    loader: ILoader<TData, TNewData>,
+    options?: IDatasetOptions
+  ): Dataset<TData, TNewData> {
+    return new Dataset(node, channel, fetcher, loader, options)
+  }
+
+  private async fetchWith(fetcher: Fetcher<TNewData>) {
+    // TODO: add to queue / toggle isFetching
+    const newData = await fetcher()
+    return this.update(newData)
+  }
+
+  private async update(newData: TNewData) {
+    const { contentId, data, json } = await this.loader.load(
+      newData,
+      this.currentCID
+    )
+
+    this.currentCID = contentId
+    this.cache.set(data)
+    this.lastUpdated = Date.now()
+    this.node.upload(contentId)
+
+    return data
+  }
+
+  init() {
+    const frequency = this.frequency === 'static' ? Infinity : this.frequency
+    this.node.connect(this.channel, frequency)
+
+    if (this.initializer) {
+      this.fetchWith(this.initializer)
+    }
+  }
+
+  get(): Promise<TData> {
+    if (this.isStale()) {
+      return this.fetchWith(this.fetcher)
+    }
+    return Promise.resolve(this.cache.get())
   }
 
   isStale(): boolean {
-    return false
+    if (this.frequency === 'static') {
+      return false
+    }
+
+    // Using `>=` since "frequency" feels like "update every n milliseconds",
+    // whereas `>` would fit better for "keep alive for n milliseconds"
+    return Date.now() - this.lastUpdated >= this.frequency
   }
 }

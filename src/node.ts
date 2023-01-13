@@ -17,11 +17,11 @@ interface INodeEvents {
     selectedLeader: () => void
     sentMessage: () => void
     receivedMessage: () => void
-    uploadedData: () => void
+    uploadedData: (contentId: string) => void
     downloadedData: () => void
 }
 
-export default class Node extends EventEmitter {
+export class Node extends EventEmitter {
 
     private _ipfs
     private _untypedOn = this.on
@@ -89,9 +89,9 @@ export default class Node extends EventEmitter {
         this.emit('joinedChannel')
     }
 
-    disconnect(channel, frequency) {
-        this.emit('leftChannel')
-    }
+  disconnect(channel: string, frequency: number) {
+    this.emit('leftChannel')
+  }
 
     async sendMessage(channel: string){
         const ipfs: IPFS.IPFS = await this._ipfs
@@ -100,18 +100,17 @@ export default class Node extends EventEmitter {
         this.emit('sentMessage')
     }
 
-    upload(contentId){
-        this.emit('uploadedData')
-    }
+  upload(contentId: string) {
+    this.emit('uploadedData', contentId)
+  }
 
-    download(contentId){
-        this.emit('downloadedData')
-    }
+  download(contentId: string) {
+    this.emit('downloadedData', contentId)
+  }
 
-    selectLeader(){
-        this.emit('selectedLeader')
-    }
-
+  selectLeader() {
+    this.emit('selectedLeader')
+  }
 }
 
 const node = new Node()
