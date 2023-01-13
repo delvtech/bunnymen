@@ -15,8 +15,8 @@
   "repository": "git@github.com:element-fi/bunneymen.git",
   "scripts": {
     "build": "tsc",
-    "start": "ts-node -r dotenv/config -r tsconfig-paths/register src/node.ts",
-    "watch": "nodemon -r dotenv/config -r tsconfig-paths/register src/node.ts"
+    "start": "ts-node --esm -r dotenv/config -r tsconfig-paths/register src/node.ts",
+    "watch": "nodemon --esm -r dotenv/config -r tsconfig-paths/register src/node.ts"
   },
   "devDependencies": {
     "@types/node": "^18.11.18",
