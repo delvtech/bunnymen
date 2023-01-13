@@ -1,6 +1,8 @@
 {
   "name": "bunneymen",
   "version": "0.0.0",
+  "private": true,
+  "type": "module",
   "source": "src/index.ts",
   "main": "dist/main.js",
   "types": "dist/types.d.ts",
@@ -13,8 +15,8 @@
   "repository": "git@github.com:element-fi/bunneymen.git",
   "scripts": {
     "build": "tsc",
-    "start": "ts-node -r dotenv/config -r tsconfig-paths/register src/index.ts",
-    "watch": "nodemon -r dotenv/config -r tsconfig-paths/register src/index.ts"
+    "start": "ts-node --esm -r dotenv/config -r tsconfig-paths/register src/node.ts",
+    "watch": "nodemon --esm -r dotenv/config -r tsconfig-paths/register src/node.ts"
   },
   "devDependencies": {
     "@types/node": "^18.11.18",
@@ -25,8 +27,15 @@
     "typescript": "^4.9.4"
   },
   "dependencies": {
-    "ipfs-core-types": "^0.14.0",
+    "@chainsafe/libp2p-noise": "^8.0.1",
+    "@libp2p/bootstrap": "^2.0.0",
+    "@libp2p/kad-dht": "^3.0.4",
+    "@libp2p/mdns": "^3.0.0",
+    "@libp2p/mplex": "^5.2.0",
+    "@libp2p/tcp": "^3.0.6",
     "ipfs-core": "^0.16.0",
-    "multiformats": "^9.6.5"
+    "ipfs-core-types": "^0.14.0",
+    "libp2p": "^0.39.0",
+    "uint8arrays": "^3.0.0"
   }
 }
