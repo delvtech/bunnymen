@@ -1,4 +1,12 @@
 import * as IPFS from 'ipfs-core'
+import { createLibp2p } from 'libp2p'
+import { TCP } from '@libp2p/tcp'
+import { WebSockets } from '@libp2p/websockets'
+import { WebRTCStar } from '@libp2p/webrtc-star'
+import { Bootstrap } from '@libp2p/bootstrap'
+import { Mplex } from '@libp2p/mplex'
+import { Noise } from '@chainsafe/libp2p-noise'
+import { GossipSub } from '@chainsafe/libp2p-gossipsub'
 import { EventEmitter } from 'events'
 
 interface INodeEvents {
@@ -7,16 +15,15 @@ interface INodeEvents {
     peerJoinedChannel:() => void
     peerLeftChannel:() => void
     selectedLeader: () => void
-    sentContentId: () => void
-    receivedContentId: () => void
+    sentMessage: () => void
+    receivedMessage: () => void
     uploadedData: () => void
     downloadedData: () => void
 }
 
 export default class Node extends EventEmitter {
 
-    //private _ipfs
-    private _room
+    private _ipfs
     private _untypedOn = this.on
     private _untypedEmit = this.emit
     public on = <K extends keyof INodeEvents>(event: K, listener: INodeEvents[K]): this => this._untypedOn(event, listener)
@@ -24,26 +31,61 @@ export default class Node extends EventEmitter {
 
     constructor() {
         super()
+
+        const libp2pBundle = (opts) => {
+
+            const peerId = opts.peerId
+            const bootstrapList = opts.config.Bootstrap
+            const webRTCStar = new WebRTCStar()
+        
+            // see https://github.com/libp2p/js-libp2p/blob/master/doc/CONFIGURATION.md
+            return createLibp2p({
+                peerId,
+                connectionManager: {
+                    pollInterval: 5000, // how often we check peer health
+                    autoDial: true, // auto dial to peers we find when we dip below min peers
+                },
+                transports: [
+                    new TCP(),
+                    new WebSockets(),
+                ],
+                streamMuxers: [
+                    new Mplex()
+                ],
+                connectionEncryption: [
+                    new Noise()
+                ],
+                peerDiscovery: [
+                    webRTCStar.discovery,
+                    new Bootstrap({
+                        interval: 30e3,
+                        list: bootstrapList
+                    })
+                ],
+                // Turn on relay with hop active so we can connect to more peers
+                relay: {
+                    enabled: true,
+                    hop: {
+                        enabled: true,
+                        active: true
+                    }
+                },
+                pubsub: new GossipSub({ 
+                    emitSelf: true,   
+                    allowPublishToZeroPeers: true,
+                })
+            })
+        }
+        this._ipfs =  IPFS.create({
+            libp2p: libp2pBundle
+        })
     }
 
-    async connect(channel, frequency) {
 
-        let _ipfs = await IPFS.create({
-            repo: 'ipfs/bunnymen',
-            config: {
-                Addresses: {
-                    Swarm: [
-                        '/dns4/ws-star.discovery.libp2p.io/tcp/443/wss/p2p-websocket-star',
-                        '/dns4/ws-star-signal-2.servep2p.com/tcp/443/wss/p2p-websocket-star',
-                        '/dns4/ws-star-signal-1.servep2p.com/tcp/443/wss/p2p-websocket-star',
-                    ]
-                }
-            }
-        })
-
-        const peers = await _ipfs.swarm.peers()
-        console.log(`The node now has ${peers.length} peers.`)
-
+    async connect(channel: string, frequency: Number) {
+        const ipfs: IPFS.IPFS = await this._ipfs
+        const receiveMsg = (msg) => this.emit('receivedMessage')
+        ipfs.pubsub.subscribe(channel,receiveMsg)
         this.emit('joinedChannel')
     }
 
@@ -51,8 +93,11 @@ export default class Node extends EventEmitter {
         this.emit('leftChannel')
     }
 
-    gossip(contendId){
-        this.emit('sentContentId')
+    async sendMessage(channel: string){
+        const ipfs: IPFS.IPFS = await this._ipfs
+        const msg = new TextEncoder().encode('banana')
+        ipfs.pubsub.publish(channel, msg)
+        this.emit('sentMessage')
     }
 
     upload(contentId){
@@ -70,5 +115,11 @@ export default class Node extends EventEmitter {
 }
 
 const node = new Node()
-node.on('joinedChannel', () => console.log('works'))
+node.on('joinedChannel', () => console.log('connected'))
+node.on('sentMessage', () => console.log('sent message'))
+node.on('receivedMessage', () => console.log('recieved message'))
 node.connect('foo',10)
+
+setInterval(async () => {
+    node.sendMessage('foo')
+}, 2000)
