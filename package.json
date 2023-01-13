@@ -2,6 +2,7 @@
   "name": "bunneymen",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "source": "src/index.ts",
   "main": "dist/main.js",
   "types": "dist/types.d.ts",
