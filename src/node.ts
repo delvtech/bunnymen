@@ -1,6 +1,5 @@
+import * as IPFS from 'ipfs-core'
 import { EventEmitter } from 'events'
-import { IPFS, create } from 'ipfs-core'
-import type { CID } from 'multiformats/cid'
 
 interface INodeEvents {
     joinedChannel: () => void
@@ -16,6 +15,8 @@ interface INodeEvents {
 
 export default class Node extends EventEmitter {
 
+    //private _ipfs
+    private _room
     private _untypedOn = this.on
     private _untypedEmit = this.emit
     public on = <K extends keyof INodeEvents>(event: K, listener: INodeEvents[K]): this => this._untypedOn(event, listener)
@@ -25,7 +26,24 @@ export default class Node extends EventEmitter {
         super()
     }
 
-    connect(channel, frequency) {
+    async connect(channel, frequency) {
+
+        let _ipfs = await IPFS.create({
+            repo: 'ipfs/bunnymen',
+            config: {
+                Addresses: {
+                    Swarm: [
+                        '/dns4/ws-star.discovery.libp2p.io/tcp/443/wss/p2p-websocket-star',
+                        '/dns4/ws-star-signal-2.servep2p.com/tcp/443/wss/p2p-websocket-star',
+                        '/dns4/ws-star-signal-1.servep2p.com/tcp/443/wss/p2p-websocket-star',
+                    ]
+                }
+            }
+        })
+
+        const peers = await _ipfs.swarm.peers()
+        console.log(`The node now has ${peers.length} peers.`)
+
         this.emit('joinedChannel')
     }
 

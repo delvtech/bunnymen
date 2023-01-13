@@ -1,13 +1,13 @@
 
 {
   "compilerOptions": {
-    "module": "commonjs",
+    "module": "es2020", // ensures output is ESM
+    "target": "es2020", // support modern features like private identifiers
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
-    "target": "es2017",
     "outDir": "./dist",
     "baseUrl": ".",
     "paths": {
@@ -15,11 +15,11 @@
     },
     "typeRoots": ["./node_modules/@types"],
     "types": ["node"],
-    "moduleResolution": "Node",
+    "moduleResolution": "node",
     "incremental": true,
     "declarationMap": true,
     "inlineSourceMap": true,
-    "inlineSources": true
+    "inlineSources": true,
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "**/*.spec.ts"]
