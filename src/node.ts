@@ -15,6 +15,7 @@ import path from 'path'
 import { nanoid } from 'nanoid'
 import { TCP } from '@libp2p/tcp'
 import { PeerId, RSAPeerId } from '@libp2p/interface-peer-id'
+import { Message } from '@libp2p/kad-dht/dist/src/message'
 
 interface INodeEvents {
     subscribed: (property: string) => void
@@ -32,7 +33,7 @@ export class Node extends EventEmitter {
 
     private _topic: string
     private _node
-    private _peerId
+    private _peerId: PeerId
     private _peers: PeerId[]
     private _untypedOn = this.on
     private _untypedEmit = this.emit
@@ -85,11 +86,11 @@ export class Node extends EventEmitter {
         this.emit('sentMessage', message)
     }
 
-    upload(data){
+    upload(data: string){
         this.emit('uploadedData', data)
     }
 
-    download(data){
+    download(data: string){
         this.emit('downloadedData', data)
     }
 
