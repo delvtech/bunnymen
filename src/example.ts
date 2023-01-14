@@ -5,8 +5,8 @@ import { Node } from './node'
 
 async function main() {
   const db = new BunnymenDB()
-
-  const node = new Node()
+  const topic = 'frank'
+  const node = new Node(topic)
 
   const fooLoader = Loader.create(
     (currentCount: number, incrementCount: number) =>
@@ -16,7 +16,7 @@ async function main() {
   const fooFetcher = () => 1
   const fooInitializer = () => 1
 
-  const fooDataset = Dataset.create(node, 'foo', fooFetcher, fooLoader, {
+  const fooDataset = Dataset.create(node, topic, fooFetcher, fooLoader, {
     initializer: fooInitializer,
   })
 
