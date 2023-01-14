@@ -1,6 +1,7 @@
-import { Node } from './node'
+import { Node } from './node.js'
 
-export async function main(topic: string) {
+export async function main() {
+    const topic = 'frank'
     const node = new Node(topic)
     
     let numPeers = 0
@@ -42,4 +43,4 @@ export async function main(topic: string) {
     
 }
 
-main('frank')
+main()
