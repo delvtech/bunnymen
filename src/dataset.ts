@@ -101,7 +101,7 @@ export class Dataset<TData extends any = any, TNewData extends any = TData>
 
   init() {
     const frequency = this.frequency === 'static' ? Infinity : this.frequency
-    this.node.connect(this.channel, frequency)
+    this.node.subscribe()
 
     if (this.initializer) {
       this.fetchWith(this.initializer)
