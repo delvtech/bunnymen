@@ -16,7 +16,8 @@
   "scripts": {
     "build": "tsc",
     "start": "ts-node --esm -r dotenv/config -r tsconfig-paths/register src/node.ts",
-    "watch": "nodemon --esm -r dotenv/config -r tsconfig-paths/register src/node.ts"
+    "watch": "nodemon --esm -r dotenv/config -r tsconfig-paths/register src/node.ts",
+    "nodeExample":"ts-node --esm -r dotenv/config -r tsconfig-paths/register src/nodeExample.ts"
   },
   "devDependencies": {
     "@types/node": "^18.11.18",
