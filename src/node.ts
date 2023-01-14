@@ -9,13 +9,15 @@ import { Mplex } from '@libp2p/mplex'
 import { Noise } from '@chainsafe/libp2p-noise'
 import { GossipSub } from '@chainsafe/libp2p-gossipsub'
 import { PubSubPeerDiscovery } from '@libp2p/pubsub-peer-discovery'
+import type { CID } from 'multiformats/cid'
+import { TCP } from '@libp2p/tcp'
+import { PeerId, RSAPeerId } from '@libp2p/interface-peer-id'
+import { Message } from '@libp2p/kad-dht/dist/src/message'
 import { EventEmitter } from 'events'
 import os from 'os'
 import path from 'path'
 import { nanoid } from 'nanoid'
-import { TCP } from '@libp2p/tcp'
-import { PeerId, RSAPeerId } from '@libp2p/interface-peer-id'
-import { Message } from '@libp2p/kad-dht/dist/src/message'
+
 
 interface INodeEvents {
     subscribed: (property: string) => void
@@ -61,13 +63,13 @@ export class Node extends EventEmitter {
         this._peers = new Array(0)
     }
 
-    async poll() {
+    async poll(frequency: number) {
         setInterval(async () => {
             //this.checkForNewPeers()
-        }, 1000)
+        }, frequency)
     }
 
-    async subscribe(frequency: Number): Promise<void> {
+    async subscribe(): Promise<void> {
         const node: IPFS.IPFS = await this._node
         const receivedMessage = (message) => this.emit('receivedMessage', String.fromCharCode.apply(null, message.data))
         node.pubsub.subscribe(this._topic,receivedMessage)
@@ -86,11 +88,25 @@ export class Node extends EventEmitter {
         this.emit('sentMessage', message)
     }
 
-    upload(data: string){
-        this.emit('uploadedData', data)
+    async upload(data: string){
+        const node: IPFS.IPFS = await this._node
+        const file = await node.add({
+            path: this._topic,
+            content: new TextEncoder().encode(data)
+          })
+        this.emit('uploadedData', file.cid.toString())
     }
 
-    download(data: string){
+    async download(cid: string){
+        const node: IPFS.IPFS = await this._node
+        const decoder = new TextDecoder()
+        let data = ''
+      
+        for await (const chunk of node.cat(cid)) {
+          data += decoder.decode(chunk, {
+            stream: true
+          })
+        }
         this.emit('downloadedData', data)
     }
 
@@ -172,16 +188,45 @@ export class Node extends EventEmitter {
 
 }
 
-const node = new Node('2134dfdfvsfbdf')
+const topic = '2134dfdfvsfbdf'
+const node = new Node(topic)
+
+let numPeers = 0
+let counter = 0
+let cid = ''
+
 node.on('subscribed', (peerId) => console.log('subscribed ' + peerId))
 node.on('unsubscribed', (peerId) => console.log('unsubscribed ' + peerId))
 node.on('peerSubscribed', (peerId) => console.log('peer subscribed ' + peerId))
 node.on('peerUnsubscribed', (peerId) => console.log('peer Unsubscribed ' + peerId))
-node.on('sentMessage', (message) => console.log('sent message: ' + message))
-node.on('receivedMessage', (message) => console.log('recieved message: ' + message))
-node.subscribe(10)
-node.poll()
+node.on('sentMessage', (message) => {
+    //console.log('sent message: ' + message)
+})
+node.on('receivedMessage', (message) => {
+    cid = message
+    //console.log('recieved message: ' + message)
+    node.download(cid)
+})
+node.on('uploadedData', (cid) => {
+    console.log("uploaded data: " + cid)
+    setInterval(async () => {
+        node.sendMessage(cid)
+    }, 2000)
+    
+})
+node.on('downloadedData', (data) => {
+    if( +data >= counter ){
+        counter = +data
+        console.log("downloaded data: " + data)
+        counter++
+        node.upload(counter.toString())
+    }
+})
 
-setInterval(async () => {
-    node.sendMessage('apple')
-}, 2000)
+node.subscribe()
+node.poll(100)
+
+node.upload(counter.toString())
+
+
+
