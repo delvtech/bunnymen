@@ -15,6 +15,7 @@
   "repository": "git@github.com:element-fi/bunneymen.git",
   "scripts": {
     "build": "tsc",
+    "example": "ts-node --esm -r dotenv/config -r tsconfig-paths/register src/example.ts",
     "start": "ts-node --esm -r dotenv/config -r tsconfig-paths/register src/node.ts",
     "watch": "nodemon --esm -r dotenv/config -r tsconfig-paths/register src/node.ts",
     "nodeExample":"ts-node --esm -r dotenv/config -r tsconfig-paths/register src/nodeExample.ts"
@@ -36,8 +37,8 @@
     "@libp2p/mplex": "^5.2.0",
     "@libp2p/tcp": "^3.0.6",
     "fast-json-stable-stringify": "^2.1.0",
-    "ipfs-core-types": "^0.14.0",
     "ipfs-core": "^0.16.0",
+    "ipfs-core-types": "^0.14.0",
     "it-to-buffer": "^3.0.0",
     "libp2p": "^0.39.0",
     "multiformats": "^9.6.5",

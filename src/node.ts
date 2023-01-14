@@ -12,13 +12,16 @@ import { PubSubPeerDiscovery } from '@libp2p/pubsub-peer-discovery'
 import type { CID } from 'multiformats/cid'
 import { TCP } from '@libp2p/tcp'
 import { PeerId, RSAPeerId } from '@libp2p/interface-peer-id'
-import { Message } from '@libp2p/kad-dht/dist/src/message'
 import { EventEmitter } from 'events'
 import os from 'os'
 import path from 'path'
 import { nanoid } from 'nanoid'
 import { createHash } from 'node:crypto'
 
+// this package was installed as a dependency of ipfs-core, but isn't in the
+// package.json because if the versions get out of sync, the typescript server
+// will throw errors.
+import type { Message } from '@libp2p/interface-pubsub'
 
 export interface INodeEvents {
     subscribed: (property: string) => void
@@ -51,7 +54,7 @@ export class Node extends EventEmitter {
     constructor(topic: string) {
         super()
 
-        const libp2pBundle = (opts) => {
+        const libp2pBundle = (opts: IPFS.Libp2pFactoryFnArgs) => {
 
             this._peerId = opts.peerId
             const bootstrapList = opts.config.Bootstrap
@@ -85,7 +88,7 @@ export class Node extends EventEmitter {
 
     async subscribe(): Promise<void> {
         const node: IPFS.IPFS = await this._node
-        const receivedMessage = (message) => this.emit('receivedMessage', String.fromCharCode.apply(null, message.data))
+        const receivedMessage = (message: Message) => this.emit('receivedMessage', String.fromCharCode(...message.data))
         node.pubsub.subscribe(this._topic,receivedMessage)
         this.emit('subscribed', this._topic)
         this.selectLeader()
