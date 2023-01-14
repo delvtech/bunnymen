@@ -36,7 +36,7 @@ export class Node extends EventEmitter {
     private _topic: string
     private _node
     private _peerId: PeerId
-    private _peers: PeerId[]
+    private _peers: string[]
     private _untypedOn = this.on
     private _untypedEmit = this.emit
     public on = <K extends keyof INodeEvents>(event: K, listener: INodeEvents[K]): this => this._untypedOn(event, listener)
@@ -65,7 +65,7 @@ export class Node extends EventEmitter {
 
     async poll(frequency: number) {
         setInterval(async () => {
-            //this.checkForNewPeers()
+            this.checkForNewPeers()
         }, frequency)
     }
 
@@ -76,9 +76,9 @@ export class Node extends EventEmitter {
         this.emit('subscribed', this._topic)
     }
 
-    async unsubscribe(topic: string) {
+    async unsubscribe() {
         const node: IPFS.IPFS = await this._node
-        node.pubsub.unsubscribe(topic)
+        node.pubsub.unsubscribe(this._topic)
         this.emit('unsubscribed', this._topic)
     }
 
@@ -86,6 +86,7 @@ export class Node extends EventEmitter {
         const node: IPFS.IPFS = await this._node
         node.pubsub.publish(this._topic, new TextEncoder().encode(message))
         this.emit('sentMessage', message)
+        return message
     }
 
     async upload(data: string){
@@ -94,7 +95,9 @@ export class Node extends EventEmitter {
             path: this._topic,
             content: new TextEncoder().encode(data)
           })
-        this.emit('uploadedData', file.cid.toString())
+        const cid = file.cid.toString()
+        this.emit('uploadedData', cid)
+        return file.cid.toString()
     }
 
     async download(cid: string){
@@ -108,6 +111,7 @@ export class Node extends EventEmitter {
           })
         }
         this.emit('downloadedData', data)
+        return data
     }
 
     selectLeader(){
@@ -115,18 +119,20 @@ export class Node extends EventEmitter {
         this.emit('selectedLeader', newLeader)
     }
 
+    getPeers(){
+        return this._peers
+    }
+
     private async checkForNewPeers(){
 
         const node: IPFS.IPFS = await this._node
-        var prevPeers: PeerId[] = this._peers;
-        var peers = await node.pubsub.peers(this._topic);
-        peers.push(this._peerId);
-        this._peers = peers
-    
-        var peersLeft = prevPeers.filter((prevPeer: PeerId) => !prevPeers.includes(prevPeer));
+        var prevPeers: string[] = this._peers;
+        this._peers = (await node.pubsub.peers(this._topic)).map(String);
+
+        var peersLeft = prevPeers.filter((prevPeer: string) => !prevPeers.includes(prevPeer));
         peersLeft.forEach(peer => this.emit('peerUnsubscribed',peer.toString()));
     
-        var peersJoined = peers.filter((peer: PeerId) => !prevPeers.includes(peer));
+        var peersJoined = this._peers.filter((peer: string) => !prevPeers.includes(peer));
         peersJoined.forEach(peer => this.emit('peerSubscribed',peer.toString()));
       }
 
