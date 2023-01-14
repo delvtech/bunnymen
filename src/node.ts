@@ -17,6 +17,7 @@ import { EventEmitter } from 'events'
 import os from 'os'
 import path from 'path'
 import { nanoid } from 'nanoid'
+import { createHash } from 'node:crypto'
 
 
 export interface INodeEvents {
@@ -37,6 +38,11 @@ export class Node extends EventEmitter {
     private _node
     private _peerId: PeerId
     private _peers: string[]
+    private _currentLeader: string
+    private _currentCid: string
+    private _currentStep:  number = 0
+    private _frequency = -1
+    private POLLING_FREQENCY: number = 100
     private _untypedOn = this.on
     private _untypedEmit = this.emit
     public on = <K extends keyof INodeEvents>(event: K, listener: INodeEvents[K]): this => this._untypedOn(event, listener)
@@ -64,9 +70,17 @@ export class Node extends EventEmitter {
     }
 
     async poll(frequency: number) {
+        this._frequency = frequency
         setInterval(async () => {
-            this.checkForNewPeers()
-        }, frequency)
+            if(this._peerId != undefined) {
+                this.checkForNewPeers()
+                if(this._currentStep >= frequency) {
+                    this.selectLeader()
+                    this._currentStep = 0
+                }
+                this._currentStep += this.POLLING_FREQENCY
+            }
+        }, this.POLLING_FREQENCY)
     }
 
     async subscribe(): Promise<void> {
@@ -74,6 +88,7 @@ export class Node extends EventEmitter {
         const receivedMessage = (message) => this.emit('receivedMessage', String.fromCharCode.apply(null, message.data))
         node.pubsub.subscribe(this._topic,receivedMessage)
         this.emit('subscribed', this._topic)
+        this.selectLeader()
     }
 
     async unsubscribe() {
@@ -95,9 +110,9 @@ export class Node extends EventEmitter {
             path: this._topic,
             content: new TextEncoder().encode(data)
           })
-        const cid = file.cid.toString()
-        this.emit('uploadedData', cid)
-        return file.cid.toString()
+        this._currentCid = file.cid.toString()
+        this.emit('uploadedData', this._currentCid)
+        return this._currentCid
     }
 
     async download(cid: string){
@@ -110,17 +125,40 @@ export class Node extends EventEmitter {
             stream: true
           })
         }
+
+        this._currentCid = cid
         this.emit('downloadedData', data)
         return data
     }
 
-    selectLeader(){
-        const newLeader =  'abc123'
-        this.emit('selectedLeader', newLeader)
-    }
-
     getPeers(){
         return this._peers
+    }
+
+    isLeader(){
+        return this._currentLeader == this._peerId.toString()
+    }
+
+    private selectLeader(){
+        var peers = this._peers
+        // add local peerId to peer list
+        peers.push(this._peerId.toString())
+        // create a list of objects { peerId, hash }
+        // where we hash each peer with the currentCid
+        const peerHashList = peers.map(peer => {
+            var preimage = peer+this._currentCid
+            return {peerId: peer, hash: createHash('sha3-256').update(preimage).digest('hex')}
+        })
+        // sort the list alphanumerically
+        const peerHashListSorted = peerHashList.sort((a,b)=>{
+            return a.hash.localeCompare(b.hash,undefined, {
+                numeric: true,
+                sensitivity: 'base'
+            })
+        })
+        // select the first peerId in the list as the new leader
+        this._currentLeader = peerHashListSorted[0].peerId
+        this.emit('selectedLeader', this._currentLeader)
     }
 
     private async checkForNewPeers(){
@@ -134,6 +172,10 @@ export class Node extends EventEmitter {
     
         var peersJoined = this._peers.filter((peer: string) => !prevPeers.includes(peer));
         peersJoined.forEach(peer => this.emit('peerSubscribed',peer.toString()));
+
+        if(peersJoined.length > 0){
+            this._currentStep = this._frequency
+        }
       }
 
     // see https://github.com/libp2p/js-libp2p/blob/master/doc/CONFIGURATION.md

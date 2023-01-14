@@ -11,8 +11,8 @@ export async function main() {
     node.on('subscribed', (peerId) => console.log('subscribed ' + peerId))
     node.on('unsubscribed', (peerId) => console.log('unsubscribed ' + peerId))
     node.on('peerSubscribed', (peerId) => {
-        // only if there is a cid to send
-        if(cid.length > 0) {
+        // only if there is a cid to send 
+        if(cid.length > 0 && node.isLeader()) {
             // send latest cid when we see that a node has joined the channel
             node.sendMessage(cid)
         } else {
@@ -43,9 +43,12 @@ export async function main() {
             node.upload(counter.toString())
         }
     })
+    node.on('selectedLeader', (peerId) => {
+        console.log("new leader selected: " + peerId)
+    })
     
     node.subscribe()
-    node.poll(1000)    
+    node.poll(5000) 
     node.upload(counter.toString())
     
 }
