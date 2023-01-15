@@ -1,15 +1,16 @@
 import * as IPFS from 'ipfs-core'
 import { createLibp2p } from 'libp2p'
 import { MulticastDNS } from '@libp2p/mdns'
-// import { KadDHT } from '@libp2p/kad-dht'
-import { WebSockets } from '@libp2p/websockets'
-import { WebRTCStar } from '@libp2p/webrtc-star'
-import { Bootstrap } from '@libp2p/bootstrap'
-import { Mplex } from '@libp2p/mplex'
-import { Noise } from '@chainsafe/libp2p-noise'
+import { KadDHT } from '@libp2p/kad-dht'
+import { webSockets } from '@libp2p/websockets'
+import { webRTCStar } from '@libp2p/webrtc-star'
+import { bootstrap } from '@libp2p/bootstrap'
+import { mplex } from '@libp2p/mplex'
+import { noise } from '@chainsafe/libp2p-noise'
 import { GossipSub } from '@chainsafe/libp2p-gossipsub'
 import { PubSubPeerDiscovery } from '@libp2p/pubsub-peer-discovery'
-import { TCP } from '@libp2p/tcp'
+import type { CID } from 'multiformats/cid'
+import { PeerId, RSAPeerId } from '@libp2p/interface-peer-id'
 import { EventEmitter } from 'events'
 import os from 'os'
 import path from 'path'
@@ -57,9 +58,9 @@ export class Node extends EventEmitter {
 
             this._peerId = opts.peerId
             const bootstrapList = opts.config.Bootstrap
-            const webRTCStar = new WebRTCStar()
+            const wRTCStar = webRTCStar()
         
-            return this.configureLibp2p(this._peerId, webRTCStar, bootstrapList)
+            return this.configureLibp2p(this._peerId, bootstrapList)
         }
 
         this._node =  IPFS.create({
@@ -184,59 +185,37 @@ export class Node extends EventEmitter {
       }
 
     // see https://github.com/libp2p/js-libp2p/blob/master/doc/CONFIGURATION.md
-    private configureLibp2p(peerId: any, webRTCStar: WebRTCStar, bootstrapList: any) {
-        console.log(bootstrapList)
+    private configureLibp2p(peerId: any, bootstrapList: any) {
+        const wRTCStar = webRTCStar()
         return createLibp2p({
-            peerId,
             addresses: {
-                listen: [
-                    '/ip4/0.0.0.0/tcp/0/ws',
-                    '/ip4/0.0.0.0/tcp/0',
-                    '/ip4/127.0.0.1/tcp/0/ws',
-                    '/ip4/127.0.0.1/tcp/0',
-                ]
-            },
-            connectionManager: {
-                pollInterval: 5000,
-                autoDial: true, // auto dial to peers we find when we dip below min peers
+              // Add the signaling server address, along with our PeerId to our multiaddrs list
+              // libp2p will automatically attempt to dial to the signaling server so that it can
+              // receive inbound connections from other peers
+              listen: [
+                '/dns4/wrtc-star1.par.dwebops.pub/tcp/443/wss/p2p-webrtc-star',
+                '/dns4/wrtc-star2.sjc.dwebops.pub/tcp/443/wss/p2p-webrtc-star'
+              ]
             },
             transports: [
-                new WebSockets(),
-                new TCP(),
+              webSockets(),
+              wRTCStar.transport
             ],
-            streamMuxers: [
-                new Mplex()
-            ],
-            connectionEncryption: [
-                new Noise()
-            ],
+            connectionEncryption: [noise()],
+            streamMuxers: [mplex()],
             peerDiscovery: [
-                new MulticastDNS({
-                    interval: 10000
-                  }),
-                new Bootstrap({
-                    interval: 30e3,
-                    list: [bootstrapList]
-                }),
-                new PubSubPeerDiscovery({
-                    interval: 1000
-                })
-            ],
-            //dht: new KadDHT(),
-            // Turn on relay with hop active so we can connect to more peers
-            relay: {
-                enabled: true,
-                hop: {
-                    enabled: true,
-                    active: true
-                }
-            },
-            pubsub: new GossipSub({
-                enabled: true,
-                emitSelf: false,
-                allowPublishToZeroPeers: true,
-            })
-        })
+                wRTCStar.discovery,
+              bootstrap({
+                list: [
+                  '/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
+                  '/dnsaddr/bootstrap.libp2p.io/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',
+                  '/dnsaddr/bootstrap.libp2p.io/p2p/QmZa1sAxajnQjVM8WjWXoMbmPd7NsWhfKsPkErzpm9wGkp',
+                  '/dnsaddr/bootstrap.libp2p.io/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa',
+                  '/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt'
+                ]
+              })
+            ]
+          })
     }
 
 }
