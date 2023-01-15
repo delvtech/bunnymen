@@ -37,7 +37,7 @@ export interface INodeEvents {
 
 export class Node extends EventEmitter {
 
-    private _topic: string
+    readonly _topic: string
     private _node
     private _peerId: PeerIdStr = ''
     private _peers: string[]

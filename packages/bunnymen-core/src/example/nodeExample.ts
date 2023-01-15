@@ -1,4 +1,4 @@
-import { Node } from './node.js'
+import { Node } from '../node.js'
 
 export async function main() {
     const topic = 'frank'
@@ -49,7 +49,7 @@ export async function main() {
     
     node.subscribe()
     node.poll(5000) 
-    node.upload(counter.toString())
+    // node.upload(counter.toString())
     
 }
 

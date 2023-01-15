@@ -1,36 +1,33 @@
 import stringify from 'fast-json-stable-stringify'
 import toBuffer from 'it-to-buffer'
-import { IPFS, create } from 'ipfs-core'
-import { Transformer } from './types'
-
-const bufferDecoder = new TextDecoder()
+import { Node } from './node.js'
+import { Transformer } from './types.js'
 
 export interface ILoader<
   TData extends any = any,
   TNewData extends any = TData
 > {
   load: (
+    node: Node,
     newData: TNewData,
     currentCID?: string
   ) => Promise<{
-    contentId: string
+    cid: string
     data: TData
-    json: string
   }>
+  download: (
+    node: Node,
+    cid: string,
+  ) => Promise<TData>
 }
 
-/**
- * Uploads data to IPFS as JSON
- */
 export class Loader<TData extends any = any, TNewData extends any = TData>
   implements ILoader<TData, TNewData>
 {
-  aggregator?: Transformer<[TData, TNewData], TData>
-  ipfs: Promise<IPFS>
+  private aggregator?: Transformer<[TData, TNewData], TData>
 
   constructor(aggregator?: Transformer<[TData, TNewData], TData>) {
     this.aggregator = aggregator
-    this.ipfs = create()
   }
 
   /**
@@ -42,31 +39,21 @@ export class Loader<TData extends any = any, TNewData extends any = TData>
     return new Loader(aggregator)
   }
 
-  private async fetch(contentId: string): Promise<TData> {
-    const ipfs = await this.ipfs
-    const buffer = await toBuffer(ipfs.cat(contentId))
-    const json = bufferDecoder.decode(buffer)
-    return JSON.parse(json)
+  async load(node: Node, newData: TNewData, currentCID?: string) {
+    let data: TNewData | TData = newData
+    if (currentCID && this.aggregator) {
+      const currentData = await node.download(currentCID)
+      data = this.aggregator(JSON.parse(currentData), newData)
+    }
+    const cid = await node.upload(stringify(data))
+    return {
+      cid,
+      data: data as TData,
+    }
   }
 
-  async load(newData: TNewData, currentCID?: string) {
-    let data: TData = newData as unknown as TData
-
-    if (currentCID && this.aggregator) {
-      const currentData = await this.fetch(currentCID)
-      data = await this.aggregator(currentData, newData)
-    }
-
-    const json = stringify(data)
-
-    const blob = new Blob([json], { type: 'application/json' })
-    const ipfs = await this.ipfs
-    const { cid } = await ipfs.add(blob)
-
-    return {
-      contentId: cid.toString(),
-      data,
-      json,
-    }
+  async download(node: Node, cid: string) {
+    const json = await node.download(cid)
+    return JSON.parse(json)
   }
 }
