@@ -29,5 +29,8 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 
+# Parcel
+parcel-cache
+
 # turbo
 .turbo
