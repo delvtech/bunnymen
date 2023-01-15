@@ -2,8 +2,9 @@
   "name": "bunnymen",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "source": "src/index.ts",
-  "main": "dist/main.js",
+  "main": "dist/main.cjs",
   "module": "dist/module.js",
   "types": "dist/types.d.ts",
   "files": [
