@@ -14,33 +14,40 @@
   },
   "repository": "git@github.com:element-fi/bunneymen.git",
   "scripts": {
-    "build": "tsc",
+    "build": "parcel build",
     "start": "ts-node --esm -r dotenv/config -r tsconfig-paths/register src/node.ts",
     "watch": "nodemon --esm -r dotenv/config -r tsconfig-paths/register src/node.ts",
-    "nodeExample":"ts-node --esm -r dotenv/config -r tsconfig-paths/register src/nodeExample.ts"
+    "nodeExample": "ts-node --esm -r dotenv/config -r tsconfig-paths/register src/nodeExample.ts"
   },
   "devDependencies": {
+    "@parcel/packager-ts": "2.8.2",
+    "@parcel/transformer-typescript-types": "2.8.2",
     "@types/node": "^18.11.18",
     "dotenv": "^16.0.3",
     "nodemon": "^2.0.20",
+    "parcel": "^2.8.2",
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.1.2",
     "typescript": "^4.9.4"
   },
   "dependencies": {
+    "@chainsafe/libp2p-gossipsub": "^6.0.0",
     "@chainsafe/libp2p-noise": "^8.0.1",
-    "@libp2p/pubsub-peer-discovery": "^6.0.1",
     "@libp2p/bootstrap": "^2.0.0",
     "@libp2p/kad-dht": "^3.0.4",
     "@libp2p/mdns": "^3.0.0",
     "@libp2p/mplex": "^5.2.0",
+    "@libp2p/pubsub-peer-discovery": "^6.0.1",
     "@libp2p/tcp": "^3.0.6",
+    "@libp2p/webrtc-star": "^6.0.0",
+    "@libp2p/websockets": "^5.0.3",
     "fast-json-stable-stringify": "^2.1.0",
-    "ipfs-core-types": "^0.14.0",
     "ipfs-core": "^0.16.0",
+    "ipfs-core-types": "^0.14.0",
     "it-to-buffer": "^3.0.0",
     "libp2p": "^0.39.0",
     "multiformats": "^9.6.5",
+    "nanoid": "^4.0.0",
     "uint8arrays": "^3.0.0"
   }
 }
