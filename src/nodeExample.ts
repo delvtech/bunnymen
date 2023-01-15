@@ -39,8 +39,10 @@ export async function main() {
         if( +data >= counter ){
             counter = +data
             console.log("downloaded data: " + data)
-            counter++
-            node.upload(counter.toString())
+            setTimeout(() => {
+              counter++
+              node.upload(counter.toString())
+            }, 2000)
         }
     })
     node.on('selectedLeader', (peerId) => {
