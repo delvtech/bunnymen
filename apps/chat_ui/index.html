@@ -1,0 +1,162 @@
+<!DOCTYPE HTML>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Gaiman Text Game</title>
+    <!--[if IE]>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <script src="https://cdn.jsdelivr.net/npm/jquery"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery.terminal/js/jquery.terminal.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery.terminal/js/xml_formatting.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/jquery.terminal/css/jquery.terminal.min.css" rel="stylesheet"/>
+    <script src="https://cdn.jsdelivr.net/combine/npm/js-polyfills/keyboard.js,gh/jcubic/static/js/wcwidth.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="generator" content="Gaiman 1.0.0-beta.3"/>
+    <style>
+:root {
+    --color: #ccc;
+    --background: black;
+    --link-color: #3377FF;
+    --size: 1;
+    /* use --glow: 1; to add glow effect */
+    /* available animations: terminal-bar, terminal-underline */
+    --animation: terminal-blink;
+    --font: monospace;
+    --options: {}; /* JSON config for jQuery Terminal */
+}
+body {
+    margin: 0;
+    padding: 0;
+}
+#term {
+    height: 100vh;
+}
+    </style>
+</head>
+<body>
+<template id="greetings">
+......................................................................
+................#.*/.........................../,.....(...............
+...............,....#........................,../..*..*/..............
+.....................(.....................(...,.,....................
+...............%......./..................#...&.......................
+................%........*...............*@..(........................
+................/.........,............../@.%,........................
+................./........(..............%*/(.........................
+...................*.......,...........&,..#/.........................
+....................,,.....&...........((..,(.........................
+......................#....*(.........,#,..%..........................
+........................#...(.........@...(...........................
+.........................#................(#*.........................
+........................,*#...............#*%&........................
+.......................@/,................/.(%&*......................
+......................(@*.,................(..&&......................
+......................@&#*.................#%@@@(.....................
+......................*&*..,..............,./@&%@.....................
+.......................&,#,.................%%&%@.....................
+......................&&*#@(/*,........,,,/&.&%%&.....................
+......................@%*..(##/,.....*///*,..&(&@.....................
+......................@(../%...../........%,%,#&(.....................
+....................../&*..##(.,(.......%/.@.,&#......................
+.......................@&..%(#%,.......(&%#&./@.......................
+........................&/.&/#%/.......%&/&.,&@*......................
+......................*%%&/,*&//.,.,.,/*%&#(.#@/......................
+................*%//..,/,(%#/,##/*,/,.#%,//##(.,..,#&,................
+............*&%%#(......................,#/........,#...#%%...........
+..........,&&%,#,.........................................%&&.........
+.........,@@%#,...........................................*@#&........
+.........@@&*..............................................&&&#.......
+
+
+    ____  __  ___   ___   ____  ____  __________   __
+   / __ )/ / / / | / / | / /\ \/ /  |/  / ____/ | / /
+  / __  / / / /  |/ /  |/ /  \  / /|_/ / __/ /  |/ / 
+ / /_/ / /_/ / /|  / /|  /   / / /  / / /___/ /|  /  
+/_____/\____/_/ |_/_/ |_/   /_/_/  /_/_____/_/ |_/   
+                                                                       
+    </template>     
+<div id="term">
+</div><script>
+var is_iframe = (function() {
+    try {
+        return window.self !== window.top;
+    } catch (e) {
+        return true;
+    }
+})();
+if (is_iframe) {
+    window.onerror = function(message, source, lineno, colno, error) {
+        window.parent.postMessage({
+            message,
+            source,
+            lineno,
+            colno
+        });
+        throw error;
+    };
+}
+
+var term;
+var initialized = false;
+
+function ready() {
+    term = $('body').terminal(function(cmd, ...args) {        
+        this.list = () => {
+            this.echo('[[;rgba(205,205,0,0.99);]Current Sessions...]');
+            for (let i = 0; i < 6; i++) {
+                this.echo('[[;rgba(205,205,0,.99);]connected: bunnyman ' + i + ']')
+            }
+        }
+
+        this.error = (msg) => {
+            this.echo(`[[b;red;black]Error: ${msg}]`);
+        }
+
+        if (cmd === 'chat' && !initialized) {
+            initialized = true;
+            this.echo('bunnyman 10: Hello, is anyone there?');
+            this.echo('bunnyman 4: We have connected');
+            this.echo('\n[[;rgba(205,205,0,0.99);]bunnyman 22 joined the chat]');
+            this.echo('\n[[;rgba(205,205,0,0.99);]bunnyman 22 left the chat]');
+            this.echo('bunnyman 7: GM');
+            this.echo('bunnyman 4: GM muthafuckas');
+            this.exec('bunnyman 69: \&lt;\script>\&lt;script\>')
+            this.error('You cannot inject HTML. Session Terminating...');
+            this.exec('bunnyman69: I tried to inject you');
+            return this.exec('bunnyman69: you all are weirdos');
+        }
+
+        if (cmd === 'ls') {
+            return this.list();
+        }
+
+        if (cmd === 'help') {
+            return this.echo('[[;rgba(0, 100, 100);]\n\nWelcome to Bunnymen.\n\nBreak free from centralized eth nodes & providers.\nBunnymen uses your browser to become a node.\nIt shares/uploads application data with other browsers.\nIt is like torrent, but runs in the browser.\n\nA few usecaes:\n-Decentralized Frontends\n-Reduced reliance on node providers\n-User safety and data sovereignty\n\nThis is a chat application, your privacy is maintained.\n\nTo start, press chat...\n\nor press exit to terminatee...]', { typing: true, delay: 20 });
+        }
+
+        if (['mkdir', 'cd', 'ps', 'grep', 'ssh', 'curl'].includes(cmd)) {
+            this.echo('[[;rgba(205,205,0,0.99);]Stay Tuned, these commands and many more are coming... \nWe believe in a world where data is open and you have direct access. Consider this your future terminal.]');
+        }
+
+        if (!initialized) {
+            return this.error(cmd);
+        }
+    }, {
+        onInit() {
+            this.echo('\n[[;rgba(0, 100, 100);]Bunnymen vBeta0.0.] Welcome Anon\n');
+            this.echo('\n[[;rgba(0, 100, 100);black]Press help to get started...]');
+        },
+        greetings: greetings.innerHTML,
+        prompt: "[[;rgba(0, 100, 100);black]>>> ]",
+    });
+}
+
+
+$(document).ready(ready);
+
+</script>
+<script type="module" src="index.module.js"></script>
+<script nomodule src="index.js"></script>
+</body>
+</html>

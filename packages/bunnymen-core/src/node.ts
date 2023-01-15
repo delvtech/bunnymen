@@ -1,25 +1,26 @@
 import * as IPFS from 'ipfs-core'
 import { createLibp2p } from 'libp2p'
 import { MulticastDNS } from '@libp2p/mdns'
-// import { KadDHT } from '@libp2p/kad-dht'
-import { WebSockets } from '@libp2p/websockets'
-import { WebRTCStar } from '@libp2p/webrtc-star'
-import { Bootstrap } from '@libp2p/bootstrap'
-import { Mplex } from '@libp2p/mplex'
-import { Noise } from '@chainsafe/libp2p-noise'
-import { GossipSub } from '@chainsafe/libp2p-gossipsub'
+//import { kadDHT } from '@libp2p/kad-dht'
+import { webSockets } from '@libp2p/websockets'
+import { webRTCStar } from '@libp2p/webrtc-star'
+import { bootstrap } from '@libp2p/bootstrap'
+import { mplex } from '@libp2p/mplex'
+import { noise } from '@chainsafe/libp2p-noise'
+import { gossipsub,GossipSubComponents } from '@chainsafe/libp2p-gossipsub'
 import { PubSubPeerDiscovery } from '@libp2p/pubsub-peer-discovery'
-import { TCP } from '@libp2p/tcp'
+import type { CID } from 'multiformats/cid'
+import { PeerId, RSAPeerId } from '@libp2p/interface-peer-id'
+import { Message } from '@libp2p/kad-dht/dist/src/message'
 import { EventEmitter } from 'events'
 import os from 'os'
 import path from 'path'
 import { nanoid } from 'nanoid'
-import sha3 from 'js-sha3'
+import {sha3_256} from '@noble/hashes/sha3'
+import { PeerIdStr } from '@chainsafe/libp2p-gossipsub/dist/src/types'
+import { openStdin } from 'process'
 
-// this package was installed as a dependency of ipfs-core, but isn't in the
-// package.json because if the versions get out of sync, the typescript server
-// will throw errors.
-import type { Message } from '@libp2p/interface-pubsub'
+const isBrowser = typeof window !== 'undefined'
 
 
 export interface INodeEvents {
@@ -38,10 +39,10 @@ export class Node extends EventEmitter {
 
     private _topic: string
     private _node
-    private _peerId?: IPFS.Libp2pFactoryFnArgs['peerId']
+    private _peerId: PeerIdStr = ''
     private _peers: string[]
-    private _currentLeader?: string
-    private _currentCid?: string
+    private _currentLeader: string = ''
+    private _currentCid: string = ''
     private _currentStep:  number = 0
     private _frequency = -1
     private POLLING_FREQENCY: number = 100
@@ -53,13 +54,10 @@ export class Node extends EventEmitter {
     constructor(topic: string) {
         super()
 
-        const libp2pBundle = (opts: IPFS.Libp2pFactoryFnArgs) => {
-
-            this._peerId = opts.peerId
-            const bootstrapList = opts.config.Bootstrap
-            const webRTCStar = new WebRTCStar()
-        
-            return this.configureLibp2p(this._peerId, webRTCStar, bootstrapList)
+        const libp2pBundle = (opts: any) => {
+            this._peerId = opts.peerId.toString()
+            const bootstrapList = opts.config.bootstrap
+            return this.configureLibp2p(opts, bootstrapList)
         }
 
         this._node =  IPFS.create({
@@ -87,9 +85,8 @@ export class Node extends EventEmitter {
 
     async subscribe(): Promise<void> {
         const node: IPFS.IPFS = await this._node
-        node.pubsub.subscribe(this._topic, (message) => {
-            this.emit('receivedMessage', new TextDecoder().decode(message.data))
-        })
+        const receivedMessage = (message: any) => this.emit('receivedMessage', String.fromCharCode.apply(null, message.data))
+        node.pubsub.subscribe(this._topic,receivedMessage)
         this.emit('subscribed', this._topic)
         this.selectLeader()
     }
@@ -139,20 +136,18 @@ export class Node extends EventEmitter {
     }
 
     isLeader(){
-        return !!this._peerId && this._currentLeader == this._peerId.toString()
+        return this._currentLeader == this._peerId.toString()
     }
 
     private selectLeader(){
         var peers = this._peers
         // add local peerId to peer list
-        if (this._peerId) {
-            peers.push(this._peerId.toString())
-        }
+        peers.push(this._peerId)
         // create a list of objects { peerId, hash }
         // where we hash each peer with the currentCid
         const peerHashList = peers.map(peer => {
             var preimage = peer+this._currentCid
-            return {peerId: peer, hash: sha3.sha3_256(preimage) }
+            return {peerId: peer, hash: String.fromCharCode(...sha3_256(preimage))}
         })
         // sort the list alphanumerically
         const peerHashListSorted = peerHashList.sort((a,b)=>{
@@ -172,7 +167,7 @@ export class Node extends EventEmitter {
         var prevPeers: string[] = this._peers;
         this._peers = (await node.pubsub.peers(this._topic)).map(String);
 
-        var peersLeft = prevPeers.filter((prevPeer: string) => !prevPeers.includes(prevPeer));
+        var peersLeft = prevPeers.filter((prevPeer: string) => prevPeer != this._peerId && !this._peers.includes(prevPeer));
         peersLeft.forEach(peer => this.emit('peerUnsubscribed',peer.toString()));
     
         var peersJoined = this._peers.filter((peer: string) => !prevPeers.includes(peer));
@@ -184,46 +179,46 @@ export class Node extends EventEmitter {
       }
 
     // see https://github.com/libp2p/js-libp2p/blob/master/doc/CONFIGURATION.md
-    private configureLibp2p(peerId: any, webRTCStar: WebRTCStar, bootstrapList: any) {
-        console.log(bootstrapList)
+    private configureLibp2p(opts: any, bootstrapList: any) {
+        const transports = [webSockets()]
+        const peerDiscovery: any = [
+          bootstrap({
+            list: [
+              '/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
+              '/dnsaddr/bootstrap.libp2p.io/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',
+              '/dnsaddr/bootstrap.libp2p.io/p2p/QmZa1sAxajnQjVM8WjWXoMbmPd7NsWhfKsPkErzpm9wGkp',
+              '/dnsaddr/bootstrap.libp2p.io/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa',
+              '/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt',
+              "/ip4/104.131.131.82/tcp/4001/ipfs/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",
+              "/dnsaddr/bootstrap.libp2p.io/ipfs/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
+              "/dnsaddr/bootstrap.libp2p.io/ipfs/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa"
+            ],
+            timeout: 1000, // in ms,
+            tagName: 'bootstrap',
+            tagValue: 50,
+            tagTTL: 120000 // in ms
+          })
+        ]
+        if (isBrowser) {
+            const wRTCStar = webRTCStar()
+            transports.push(wRTCStar.transport)
+            peerDiscovery.push(wRTCStar.discovery)
+        }
         return createLibp2p({
-            peerId,
             addresses: {
-                listen: [
-                    '/ip4/0.0.0.0/tcp/0/ws',
-                    '/ip4/0.0.0.0/tcp/0',
-                    '/ip4/127.0.0.1/tcp/0/ws',
-                    '/ip4/127.0.0.1/tcp/0',
-                ]
+              // Add the signaling server address, along with our PeerId to our multiaddrs list
+              // libp2p will automatically attempt to dial to the signaling server so that it can
+              // receive inbound connections from other peers
+              listen: [
+                '/dns4/wrtc-star1.par.dwebops.pub/tcp/443/wss/p2p-webrtc-star',
+                '/dns4/wrtc-star2.sjc.dwebops.pub/tcp/443/wss/p2p-webrtc-star',
+                '/ip4/0.0.0.0/tcp/0/ws',
+              ]
             },
-            connectionManager: {
-                pollInterval: 5000,
-                autoDial: true, // auto dial to peers we find when we dip below min peers
-            },
-            transports: [
-                new WebSockets(),
-                new TCP(),
-            ],
-            streamMuxers: [
-                new Mplex()
-            ],
-            connectionEncryption: [
-                new Noise()
-            ],
-            peerDiscovery: [
-                new MulticastDNS({
-                    interval: 10000
-                  }),
-                new Bootstrap({
-                    interval: 30e3,
-                    list: [bootstrapList]
-                }),
-                new PubSubPeerDiscovery({
-                    interval: 1000
-                })
-            ],
-            //dht: new KadDHT(),
-            // Turn on relay with hop active so we can connect to more peers
+            transports,
+            connectionEncryption: [noise()],
+            streamMuxers: [mplex()],
+            peerDiscovery,
             relay: {
                 enabled: true,
                 hop: {
@@ -231,12 +226,14 @@ export class Node extends EventEmitter {
                     active: true
                 }
             },
-            pubsub: new GossipSub({
+            //kaddht: kadDHT(),
+            pubsub: gossipsub(
+            {
                 enabled: true,
                 emitSelf: false,
                 allowPublishToZeroPeers: true,
             })
-        })
+          })
     }
 
 }
