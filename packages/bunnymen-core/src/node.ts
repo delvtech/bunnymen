@@ -1,7 +1,7 @@
 import * as IPFS from 'ipfs-core'
 import { createLibp2p } from 'libp2p'
 import { MulticastDNS } from '@libp2p/mdns'
-import { KadDHT } from '@libp2p/kad-dht'
+//import { kadDHT } from '@libp2p/kad-dht'
 import { webSockets } from '@libp2p/websockets'
 import { webRTCStar } from '@libp2p/webrtc-star'
 import { bootstrap } from '@libp2p/bootstrap'
@@ -212,8 +212,16 @@ export class Node extends EventEmitter {
             connectionEncryption: [noise()],
             streamMuxers: [mplex()],
             peerDiscovery,
+            relay: {
+                enabled: true,
+                hop: {
+                    enabled: true,
+                    active: true
+                }
+            },
+            //kaddht: kadDHT(),
             pubsub: gossipsub(
-                {
+            {
                 enabled: true,
                 emitSelf: false,
                 allowPublishToZeroPeers: true,

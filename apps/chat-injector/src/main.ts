@@ -3,7 +3,7 @@ import { Node } from 'bunnymen'
 // initiate node here
 // switch to a simple inline script
 async function main() {
-    const topic = 'frank'
+    const topic = 'tiddies'
     const node = new Node(topic)
     
     //let numPeers = 0
