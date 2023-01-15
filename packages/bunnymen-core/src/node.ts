@@ -167,7 +167,7 @@ export class Node extends EventEmitter {
         var prevPeers: string[] = this._peers;
         this._peers = (await node.pubsub.peers(this._topic)).map(String);
 
-        var peersLeft = prevPeers.filter((prevPeer: string) => !prevPeers.includes(prevPeer));
+        var peersLeft = prevPeers.filter((prevPeer: string) => prevPeer != this._peerId && !this._peers.includes(prevPeer));
         peersLeft.forEach(peer => this.emit('peerUnsubscribed',peer.toString()));
     
         var peersJoined = this._peers.filter((peer: string) => !prevPeers.includes(peer));
@@ -188,8 +188,15 @@ export class Node extends EventEmitter {
               '/dnsaddr/bootstrap.libp2p.io/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',
               '/dnsaddr/bootstrap.libp2p.io/p2p/QmZa1sAxajnQjVM8WjWXoMbmPd7NsWhfKsPkErzpm9wGkp',
               '/dnsaddr/bootstrap.libp2p.io/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa',
-              '/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt'
-            ]
+              '/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt',
+              "/ip4/104.131.131.82/tcp/4001/ipfs/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",
+              "/dnsaddr/bootstrap.libp2p.io/ipfs/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
+              "/dnsaddr/bootstrap.libp2p.io/ipfs/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa"
+            ],
+            timeout: 1000, // in ms,
+            tagName: 'bootstrap',
+            tagValue: 50,
+            tagTTL: 120000 // in ms
           })
         ]
         if (isBrowser) {
