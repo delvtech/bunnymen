@@ -3,13 +3,15 @@ import toBuffer from 'it-to-buffer'
 import { IPFS, create } from 'ipfs-core'
 import { Transformer } from './types'
 
+const bufferDecoder = new TextDecoder()
+
 export interface ILoader<
   TData extends any = any,
-  TNewData extends any = TData,
+  TNewData extends any = TData
 > {
   load: (
     newData: TNewData,
-    currentCID?: string,
+    currentCID?: string
   ) => Promise<{
     contentId: string
     data: TData
@@ -23,8 +25,8 @@ export interface ILoader<
 export class Loader<TData extends any = any, TNewData extends any = TData>
   implements ILoader<TData, TNewData>
 {
-  private aggregator?: Transformer<[TData, TNewData], TData>
-  private ipfs: Promise<IPFS>
+  aggregator?: Transformer<[TData, TNewData], TData>
+  ipfs: Promise<IPFS>
 
   constructor(aggregator?: Transformer<[TData, TNewData], TData>) {
     this.aggregator = aggregator
@@ -35,7 +37,7 @@ export class Loader<TData extends any = any, TNewData extends any = TData>
    * Factory method to return a strongly typed instance.
    */
   static create<TData extends any = any, TNewData extends any = TData>(
-    aggregator?: Transformer<[TData, TNewData], TData>,
+    aggregator?: Transformer<[TData, TNewData], TData>
   ): Loader<TData, TNewData> {
     return new Loader(aggregator)
   }
@@ -43,12 +45,12 @@ export class Loader<TData extends any = any, TNewData extends any = TData>
   private async fetch(contentId: string): Promise<TData> {
     const ipfs = await this.ipfs
     const buffer = await toBuffer(ipfs.cat(contentId))
-    const json = String.fromCharCode(...buffer)
+    const json = bufferDecoder.decode(buffer)
     return JSON.parse(json)
   }
 
   async load(newData: TNewData, currentCID?: string) {
-    let data = newData as unknown as TData
+    let data: TData = newData as unknown as TData
 
     if (currentCID && this.aggregator) {
       const currentData = await this.fetch(currentCID)

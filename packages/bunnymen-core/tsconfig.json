@@ -1,0 +1,21 @@
+{
+  "extends": "tsconfig/base.json",
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "src/*": ["src/*"]
+    },
+    "outDir": "dist",
+    "resolveJsonModule": true,
+
+    "module": "es2020", // ensures output is ESM
+    "target": "es2020", // support modern features like private identifiers
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "incremental": true,
+  }
+}

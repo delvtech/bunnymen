@@ -24,29 +24,31 @@ export interface IDataset<TData extends any = any> {
 }
 
 export class Dataset<TData extends any = any, TNewData extends any = TData>
-  implements IDataset<TData>
+  implements IDataset
 {
-  private node: Node
+  node: Node
+  channel: string
+
   // keep this around to rerun during validation
-  private initializer?: Fetcher<TNewData>
-  private fetcher: Fetcher<TNewData>
-  private loader: ILoader<TData, TNewData>
-  private currentCID?: string
-  private cache: Cache<TData>
+  initializer?: Fetcher<TNewData>
+
+  fetcher: Fetcher<TNewData>
+  loader: ILoader<TData, TNewData>
+  currentCID?: string
+  cache: Cache<TData>
 
   // ms
-  private frequency: Frequency
+  frequency: Frequency
 
   // ms
-  private lastUpdated = 0
-
-  topic: string
+  lastUpdated = 0
 
   constructor(
-    topic: string,
+    node: Node,
+    channel: string,
     fetcher: Fetcher,
     loader: ILoader,
-    options?: IDatasetOptions,
+    options?: IDatasetOptions
   ) {
     const {
       initializer,
@@ -54,8 +56,8 @@ export class Dataset<TData extends any = any, TNewData extends any = TData>
       frequency = 'static',
     } = options || {}
 
-    this.node = new Node(topic)
-    this.topic = topic
+    this.node = node
+    this.channel = channel
     this.initializer = initializer
     this.fetcher = fetcher
     this.loader = loader
@@ -68,12 +70,13 @@ export class Dataset<TData extends any = any, TNewData extends any = TData>
    * Factory method to return a strongly typed instance.
    */
   static create<TData extends any = any, TNewData extends any = TData>(
-    topic: string,
+    node: Node,
+    channel: string,
     fetcher: Fetcher<TNewData>,
     loader: ILoader<TData, TNewData>,
-    options?: IDatasetOptions,
+    options?: IDatasetOptions
   ): Dataset<TData, TNewData> {
-    return new Dataset(topic, fetcher, loader, options)
+    return new Dataset(node, channel, fetcher, loader, options)
   }
 
   private async fetchWith(fetcher: Fetcher<TNewData>) {
@@ -85,7 +88,7 @@ export class Dataset<TData extends any = any, TNewData extends any = TData>
   private async update(newData: TNewData) {
     const { contentId, data, json } = await this.loader.load(
       newData,
-      this.currentCID,
+      this.currentCID
     )
 
     this.currentCID = contentId
@@ -97,6 +100,7 @@ export class Dataset<TData extends any = any, TNewData extends any = TData>
   }
 
   init() {
+    const frequency = this.frequency === 'static' ? Infinity : this.frequency
     this.node.subscribe()
 
     if (this.initializer) {
