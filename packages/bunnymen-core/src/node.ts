@@ -56,7 +56,7 @@ export class Node extends EventEmitter {
             const bootstrapList = opts.config.bootstrap
             const wRTCStar = webRTCStar()
         
-            return this.configureLibp2p(this._peerId, bootstrapList)
+            return this.configureLibp2p(opts, bootstrapList)
         }
 
         this._node =  IPFS.create({
@@ -178,7 +178,7 @@ export class Node extends EventEmitter {
       }
 
     // see https://github.com/libp2p/js-libp2p/blob/master/doc/CONFIGURATION.md
-    private configureLibp2p(peerId: any, bootstrapList: any) {
+    private configureLibp2p(opts: any, bootstrapList: any) {
         const wRTCStar = webRTCStar()
         return createLibp2p({
             addresses: {
@@ -208,16 +208,14 @@ export class Node extends EventEmitter {
                 ]
               })
             ],
-            // pubsub: new GossipSub(
-            //     {
-            //     peerId: peerId,
-
-            //     },
-            //     {
-            //     enabled: true,
-            //     emitSelf: false,
-            //     allowPublishToZeroPeers: true,
-            // })
+            pubsub: new GossipSub(
+               opts
+               ,
+                {
+                enabled: true,
+                emitSelf: false,
+                allowPublishToZeroPeers: true,
+            })
           })
     }
 
