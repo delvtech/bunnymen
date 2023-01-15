@@ -7,7 +7,7 @@ import { webRTCStar } from '@libp2p/webrtc-star'
 import { bootstrap } from '@libp2p/bootstrap'
 import { mplex } from '@libp2p/mplex'
 import { noise } from '@chainsafe/libp2p-noise'
-import { GossipSub,GossipSubComponents } from '@chainsafe/libp2p-gossipsub'
+import { gossipsub,GossipSubComponents } from '@chainsafe/libp2p-gossipsub'
 import { PubSubPeerDiscovery } from '@libp2p/pubsub-peer-discovery'
 import type { CID } from 'multiformats/cid'
 import { PeerId, RSAPeerId } from '@libp2p/interface-peer-id'
@@ -208,9 +208,7 @@ export class Node extends EventEmitter {
                 ]
               })
             ],
-            pubsub: new GossipSub(
-               opts
-               ,
+            pubsub: gossipsub(
                 {
                 enabled: true,
                 emitSelf: false,
