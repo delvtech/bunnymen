@@ -55,6 +55,7 @@ export class Node extends EventEmitter {
         super()
 
         const libp2pBundle = (opts: any) => {
+            this._peerId = opts.peerId.toString()
             const bootstrapList = opts.config.bootstrap
             return this.configureLibp2p(opts, bootstrapList)
         }
