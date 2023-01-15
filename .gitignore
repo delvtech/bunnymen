@@ -30,7 +30,7 @@ yarn-error.log*
 .env.production.local
 
 # Parcel
-parcel-cache
+.parcel-cache
 
 # turbo
 .turbo
