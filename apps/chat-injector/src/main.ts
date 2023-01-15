@@ -6,7 +6,7 @@ async function main() {
     const topic = 'frank'
     const node = new Node(topic)
     
-    let numPeers = 0
+    //let numPeers = 0
     let counter = 0
     let cid = ''
     
@@ -23,9 +23,9 @@ async function main() {
         console.log('peer subscribed ' + peerId)
     })
     node.on('peerUnsubscribed', (peerId) => console.log('peer unsubscribed ' + peerId))
-    node.on('sentMessage', (message) => {
-        //console.log('sent message: ' + message)
-    })
+    // node.on('sentMessage', (message) => {
+    //     //console.log('sent message: ' + message)
+    // })
     node.on('receivedMessage', (message) => {
         cid = message
         //console.log('recieved message: ' + message)

@@ -31,7 +31,7 @@
     "typescript": "^4.9.4"
   },
   "dependencies": {
-    "@chainsafe/libp2p-gossipsub": "4.1.1",
+    "@chainsafe/libp2p-gossipsub": "6.0.0",
     "@chainsafe/libp2p-noise": "^11.0.0",
     "@libp2p/bootstrap": "^6.0.0",
     "@libp2p/interface-pubsub": "^3.0.5",
@@ -39,6 +39,7 @@
     "@libp2p/mdns": "^3.0.0",
     "@libp2p/mplex": "^7.0.0",
     "@libp2p/pubsub-peer-discovery": "^6.0.1",
+    "@libp2p/interface-peer-id": "1.1.2",
     "@libp2p/tcp": "^3.0.6",
     "@libp2p/webrtc-star": "^6.0.0",
     "@libp2p/websockets": "^5.0.0",

@@ -66,36 +66,7 @@
   resolved "https://registry.yarnpkg.com/@chainsafe/is-ip/-/is-ip-2.0.1.tgz#62cb285669d91f88fd9fa285048dde3882f0993b"
   integrity sha512-nqSJ8u2a1Rv9FYbyI8qpDhTYujaKEyLknNrTejLYoSWmdeg+2WB7R6BZqPZYfrJzDxVi3rl6ZQuoaEvpKRZWgQ==
 
-"@chainsafe/libp2p-gossipsub@4.1.1":
-  version "4.1.1"
-  resolved "https://registry.yarnpkg.com/@chainsafe/libp2p-gossipsub/-/libp2p-gossipsub-4.1.1.tgz#804dbbd262900fd730339c40c46013ff854240af"
-  integrity sha512-W3z52uTVm48qvwTAcE+tz6ML2CPWA4ErmuL2aCWAW8S7ce6iH8anqo+xI9rcedyIOChWMWLLD4Gtaj4TMrWacw==
-  dependencies:
-    "@libp2p/components" "^2.0.3"
-    "@libp2p/crypto" "^1.0.3"
-    "@libp2p/interface-connection" "^3.0.1"
-    "@libp2p/interface-keys" "^1.0.3"
-    "@libp2p/interface-peer-id" "^1.0.4"
-    "@libp2p/interface-pubsub" "^2.0.1"
-    "@libp2p/interface-registrar" "^2.0.3"
-    "@libp2p/interfaces" "^3.0.3"
-    "@libp2p/logger" "^2.0.0"
-    "@libp2p/peer-id" "^1.1.15"
-    "@libp2p/peer-record" "^4.0.1"
-    "@libp2p/pubsub" "^3.1.2"
-    "@libp2p/topology" "^3.0.0"
-    abortable-iterator "^4.0.2"
-    denque "^1.5.0"
-    err-code "^3.0.1"
-    it-length-prefixed "^8.0.2"
-    it-pipe "^2.0.4"
-    it-pushable "^3.1.0"
-    multiformats "^9.6.4"
-    protobufjs "^6.11.2"
-    uint8arraylist "^2.3.2"
-    uint8arrays "^3.0.0"
-
-"@chainsafe/libp2p-gossipsub@^6.0.0":
+"@chainsafe/libp2p-gossipsub@6.0.0", "@chainsafe/libp2p-gossipsub@^6.0.0":
   version "6.0.0"
   resolved "https://registry.yarnpkg.com/@chainsafe/libp2p-gossipsub/-/libp2p-gossipsub-6.0.0.tgz#0f86458d1f592055435fe08eed71190dec6a7bb7"
   integrity sha512-ziC1afS+k8povuyu6Sje1DKRVcfetmrviVSa73CDSlGuqnYniT5QlrZBZ/jSozN8yG0xxajOpaCC+/BXSVLYlQ==
@@ -380,7 +351,7 @@
     "@multiformats/mafmt" "^11.0.3"
     "@multiformats/multiaddr" "^11.0.0"
 
-"@libp2p/components@^2.0.0", "@libp2p/components@^2.0.3", "@libp2p/components@^2.0.4", "@libp2p/components@^2.1.0":
+"@libp2p/components@^2.0.4", "@libp2p/components@^2.1.0":
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/@libp2p/components/-/components-2.1.1.tgz#9dceac8491d75c4e266d581ad4fcb5b833a382ec"
   integrity sha512-/XtfEdBHaNhwiaf9RowiSYnyVFIl+shuZNGQlCsJmOnn5X490TMo9GJ9PVfrTRnRn3ZXPBLS5Vp0s6++ShSv7g==
@@ -603,7 +574,7 @@
     "@libp2p/interface-peer-info" "^1.0.0"
     "@libp2p/interfaces" "^3.0.0"
 
-"@libp2p/interface-peer-id@^1.0.0", "@libp2p/interface-peer-id@^1.0.2", "@libp2p/interface-peer-id@^1.0.4":
+"@libp2p/interface-peer-id@1.1.2", "@libp2p/interface-peer-id@^1.0.0", "@libp2p/interface-peer-id@^1.0.2", "@libp2p/interface-peer-id@^1.0.4":
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/@libp2p/interface-peer-id/-/interface-peer-id-1.1.2.tgz#22cbfb4707949cd49c3271a871172221d6920049"
   integrity sha512-S5iyVzG2EUgxm4NLe8W4ya9kpKuGfHs7Wbbos0wOUB4GXsbIKgOOxIr4yf+xGFgtEBaoximvlLkpob6dn8VFgA==
@@ -645,7 +616,7 @@
     "@libp2p/interfaces" "^3.0.0"
     "@multiformats/multiaddr" "^11.0.0"
 
-"@libp2p/interface-pubsub@^2.0.0", "@libp2p/interface-pubsub@^2.0.1", "@libp2p/interface-pubsub@^2.1.0":
+"@libp2p/interface-pubsub@^2.0.1", "@libp2p/interface-pubsub@^2.1.0":
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/@libp2p/interface-pubsub/-/interface-pubsub-2.1.0.tgz#bf98d51c371018cd3d7d165dbc8e95f7cc1537d2"
   integrity sha512-X+SIqzfeCO8ZDGrFTzH9EMwMf8ojW5nk20rxv3h1sCXEdfvyJCARZ51r9UlwJcnucnHqvFChfkbubAkrr3R4Cw==
@@ -905,7 +876,7 @@
     uint8arraylist "^2.3.1"
     uint8arrays "^4.0.2"
 
-"@libp2p/peer-collections@^2.0.0", "@libp2p/peer-collections@^2.2.0":
+"@libp2p/peer-collections@^2.2.0":
   version "2.2.2"
   resolved "https://registry.yarnpkg.com/@libp2p/peer-collections/-/peer-collections-2.2.2.tgz#70cdddaeaae6c91526b423d30c6002ac3c7a785e"
   integrity sha512-sL1A0LBHJAlvqROe+OT61Y6Rg7ff+B+YNDZj+3f/LGvDssyffAQX78cXU+lWKPsT+AwHt7Sk7sO4CsYJbdOScQ==
@@ -935,7 +906,7 @@
     uint8arraylist "^2.0.0"
     uint8arrays "^4.0.2"
 
-"@libp2p/peer-id@^1.1.0", "@libp2p/peer-id@^1.1.13", "@libp2p/peer-id@^1.1.15":
+"@libp2p/peer-id@^1.1.0", "@libp2p/peer-id@^1.1.15":
   version "1.1.18"
   resolved "https://registry.yarnpkg.com/@libp2p/peer-id/-/peer-id-1.1.18.tgz#f176d7150930d365201b13b97f17c10796afa910"
   integrity sha512-Zh3gzbrQZKDMLpoJAJB8gdGtyYFSBKV0dU5vflQ18/7MJDJmjsgKO+sJTYi72yN5sWREs1eGKMhxLo+N1ust5w==
@@ -954,32 +925,6 @@
     err-code "^3.0.1"
     multiformats "^11.0.0"
     uint8arrays "^4.0.2"
-
-"@libp2p/peer-record@^4.0.1":
-  version "4.0.5"
-  resolved "https://registry.yarnpkg.com/@libp2p/peer-record/-/peer-record-4.0.5.tgz#e83ae0b9ef0d31c4c884599198c47763734a0a4c"
-  integrity sha512-o4v6N5B0hsx94TnSkLD7v8GmyQ/pNJbhy+pY8YDsmPhcwAGTnpRdlxWZraMBz8ut+vGoD7E34IdMMgJX/tgAJA==
-  dependencies:
-    "@libp2p/crypto" "^1.0.0"
-    "@libp2p/interface-peer-id" "^1.0.2"
-    "@libp2p/interface-record" "^2.0.1"
-    "@libp2p/logger" "^2.0.0"
-    "@libp2p/peer-id" "^1.1.13"
-    "@libp2p/utils" "^3.0.0"
-    "@multiformats/multiaddr" "^11.0.0"
-    err-code "^3.0.1"
-    interface-datastore "^7.0.0"
-    it-all "^2.0.0"
-    it-filter "^2.0.0"
-    it-foreach "^1.0.0"
-    it-map "^2.0.0"
-    it-pipe "^2.0.3"
-    multiformats "^10.0.0"
-    protons-runtime "^4.0.1"
-    uint8-varint "^1.0.2"
-    uint8arraylist "^2.1.0"
-    uint8arrays "^4.0.2"
-    varint "^6.0.0"
 
 "@libp2p/peer-record@^5.0.0":
   version "5.0.0"
@@ -1059,33 +1004,6 @@
     "@libp2p/peer-id" "^1.1.15"
     "@multiformats/multiaddr" "^10.4.0"
     protons-runtime "^3.1.0"
-
-"@libp2p/pubsub@^3.1.2":
-  version "3.1.3"
-  resolved "https://registry.yarnpkg.com/@libp2p/pubsub/-/pubsub-3.1.3.tgz#bd4e363cddc88a11ab24665aadb8933d13896e5b"
-  integrity sha512-lo3Ay3NHdll2Wt0kzs2RNyWagyECGDx7d4dyKwGQgzhZyoy3FnYQW8vbMLyLLX1FV9DSiWEbFsBxX2MKJXUMyQ==
-  dependencies:
-    "@libp2p/components" "^2.0.0"
-    "@libp2p/crypto" "^1.0.0"
-    "@libp2p/interface-connection" "^3.0.1"
-    "@libp2p/interface-peer-id" "^1.0.2"
-    "@libp2p/interface-pubsub" "^2.0.0"
-    "@libp2p/interface-registrar" "^2.0.0"
-    "@libp2p/interfaces" "^3.0.2"
-    "@libp2p/logger" "^2.0.0"
-    "@libp2p/peer-collections" "^2.0.0"
-    "@libp2p/peer-id" "^1.1.0"
-    "@libp2p/topology" "^3.0.0"
-    "@multiformats/multiaddr" "^11.0.0"
-    abortable-iterator "^4.0.2"
-    err-code "^3.0.1"
-    it-length-prefixed "^8.0.2"
-    it-pipe "^2.0.3"
-    it-pushable "^3.0.0"
-    multiformats "^9.6.3"
-    p-queue "^7.2.0"
-    uint8arraylist "^2.0.0"
-    uint8arrays "^3.0.0"
 
 "@libp2p/pubsub@^6.0.0":
   version "6.0.0"
@@ -4735,7 +4653,7 @@ multiformats@^11.0.0:
   resolved "https://registry.yarnpkg.com/multiformats/-/multiformats-11.0.0.tgz#728dd8adfe4b169cd5b4b22d9dc1054d48bbe2d0"
   integrity sha512-vqF8bmMtbxw9Zn3eTpk0OZQdBVmAT/+bTGwXb3C2qCNkp45aJMmkCDds3lrtObECWPf+KFjFtTOHkvCaT/c/xQ==
 
-multiformats@^9.4.2, multiformats@^9.4.5, multiformats@^9.6.3, multiformats@^9.6.4, multiformats@^9.6.5:
+multiformats@^9.4.2, multiformats@^9.4.5, multiformats@^9.6.3, multiformats@^9.6.5:
   version "9.9.0"
   resolved "https://registry.yarnpkg.com/multiformats/-/multiformats-9.9.0.tgz#c68354e7d21037a8f1f8833c8ccd68618e8f1d37"
   integrity sha512-HoMUjhH9T8DDBNT+6xzkrd9ga/XiBI4xLr58LJACwK6G3HTOPeMz4nB4KJs33L2BelrIJa7P0VuNaVF3hMYfjg==

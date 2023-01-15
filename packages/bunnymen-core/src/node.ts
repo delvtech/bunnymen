@@ -7,7 +7,7 @@ import { webRTCStar } from '@libp2p/webrtc-star'
 import { bootstrap } from '@libp2p/bootstrap'
 import { mplex } from '@libp2p/mplex'
 import { noise } from '@chainsafe/libp2p-noise'
-import { GossipSub } from '@chainsafe/libp2p-gossipsub'
+import { GossipSub,GossipSubComponents } from '@chainsafe/libp2p-gossipsub'
 import { PubSubPeerDiscovery } from '@libp2p/pubsub-peer-discovery'
 import type { CID } from 'multiformats/cid'
 import { PeerId, RSAPeerId } from '@libp2p/interface-peer-id'
@@ -18,6 +18,7 @@ import path from 'path'
 import { nanoid } from 'nanoid'
 import { createHash } from 'node:crypto'
 import { PeerIdStr } from '@chainsafe/libp2p-gossipsub/dist/src/types'
+import { openStdin } from 'process'
 
 
 export interface INodeEvents {
@@ -36,7 +37,7 @@ export class Node extends EventEmitter {
 
     private _topic: string
     private _node
-    private _peerId: PeerIdStr
+    private _peerId: PeerIdStr = ''
     private _peers: string[]
     private _currentLeader: string = ''
     private _currentCid: string = ''
@@ -51,7 +52,7 @@ export class Node extends EventEmitter {
     constructor(topic: string) {
         super()
 
-        const libp2pBundle = (opts) => {
+        const libp2pBundle = (opts: any) => {
             const bootstrapList = opts.config.bootstrap
             const wRTCStar = webRTCStar()
         
@@ -83,7 +84,7 @@ export class Node extends EventEmitter {
 
     async subscribe(): Promise<void> {
         const node: IPFS.IPFS = await this._node
-        const receivedMessage = (message) => this.emit('receivedMessage', String.fromCharCode.apply(null, message.data))
+        const receivedMessage = (message: any) => this.emit('receivedMessage', String.fromCharCode.apply(null, message.data))
         node.pubsub.subscribe(this._topic,receivedMessage)
         this.emit('subscribed', this._topic)
         this.selectLeader()
@@ -140,7 +141,7 @@ export class Node extends EventEmitter {
     private selectLeader(){
         var peers = this._peers
         // add local peerId to peer list
-        peers.push(this._peerId.toString())
+        peers.push(this._peerId)
         // create a list of objects { peerId, hash }
         // where we hash each peer with the currentCid
         const peerHashList = peers.map(peer => {
@@ -206,7 +207,17 @@ export class Node extends EventEmitter {
                   '/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt'
                 ]
               })
-            ]
+            ],
+            // pubsub: new GossipSub(
+            //     {
+            //     peerId: peerId,
+
+            //     },
+            //     {
+            //     enabled: true,
+            //     emitSelf: false,
+            //     allowPublishToZeroPeers: true,
+            // })
           })
     }
 
