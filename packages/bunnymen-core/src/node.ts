@@ -16,7 +16,7 @@ import { EventEmitter } from 'events'
 import os from 'os'
 import path from 'path'
 import { nanoid } from 'nanoid'
-import { createHash } from 'node:crypto'
+import {sha3_256} from '@noble/hashes/sha3'
 import { PeerIdStr } from '@chainsafe/libp2p-gossipsub/dist/src/types'
 import { openStdin } from 'process'
 
@@ -146,7 +146,7 @@ export class Node extends EventEmitter {
         // where we hash each peer with the currentCid
         const peerHashList = peers.map(peer => {
             var preimage = peer+this._currentCid
-            return {peerId: peer, hash: createHash('sha3-256').update(preimage).digest('hex')}
+            return {peerId: peer, hash: String.fromCharCode(...sha3_256(preimage))}
         })
         // sort the list alphanumerically
         const peerHashListSorted = peerHashList.sort((a,b)=>{
