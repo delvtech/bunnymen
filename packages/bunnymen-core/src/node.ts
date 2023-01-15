@@ -35,6 +35,7 @@ export interface INodeEvents {
     downloadedData: (property: string) => void
 }
 
+
 export class Node extends EventEmitter {
 
     readonly _topic: string

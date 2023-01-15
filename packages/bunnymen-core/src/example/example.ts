@@ -13,7 +13,7 @@ async function main() {
   db.subscribe(key, (messages) => {
     console.log(`${key} updated:`, messages)
   })
-  await db.set(key, process.argv[2])
+  await db.set(key, [process.argv[2]])
 }
 
 main()
