@@ -1,5 +1,4 @@
-import stringify from 'fast-json-stable-stringify'
-import { ILoader } from './loader.js'
+import { ILoader, IPayload } from './loader.js'
 import { Node } from './node.js'
 import { Cache } from './cache.js'
 
@@ -18,19 +17,24 @@ export interface IDatasetOptions {
   frequency?: Frequency
 }
 
-export interface IDataset<TData extends any = any> {
+export interface IDataset<
+  TData extends any = any,
+  TNewData extends any = TData
+> {
   init: () => Promise<void>
   get: () => Promise<TData>
-  set: (newData: TData) => Promise<void>
-  subscribe: (handler: (data: TData) => void) => void
+  set: (newData: TNewData) => Promise<void>
+  subscribe: (handler: (payload: IPayload<TData>) => void) => void
 }
 
-export class Dataset<TData extends any = any> implements IDataset<TData> {
+export class Dataset<TData extends any = any, TNewData extends any = TData>
+  implements IDataset<TData, TNewData>
+{
   private node: Node
   // keep this around to rerun during validation
   private initializer: Fetcher<TData>
   private fetcher: Fetcher<TData>
-  private loader: ILoader<TData, TData>
+  private loader: ILoader<TData, TNewData>
   private currentCID?: string
   private cache: Cache<TData>
 
@@ -69,32 +73,31 @@ export class Dataset<TData extends any = any> implements IDataset<TData> {
     fetcher: Fetcher<TNewData>,
     loader: ILoader<TData, TNewData>,
     options?: IDatasetOptions
-  ): Dataset<TData> {
+  ): Dataset<TData, TNewData> {
     return new Dataset(node, fetcher, loader, options)
   }
 
-  private update(data: TData, cid: string) {
-    console.log('DATASET: update')
+  private update(payload: IPayload<TData>, cid: string) {
     this.currentCID = cid
-    this.cache.set(data)
-    this.lastUpdated = Date.now()
-    return data
+    this.cache.set(payload.data)
+    this.lastUpdated = payload.lastUpdated
+    return payload.data
   }
 
   private async fetchWith(fetcher: Fetcher<TData>) {
-    console.log('DATASET: fetchWith')
     // TODO: add to queue / toggle isFetching
-    const newData = await fetcher()
-    const { data, cid } = await this.loader.load(
-      this.node,
-      newData,
-      this.currentCID
+    const data = await fetcher()
+    const cid = await this.loader.init(this.node, data)
+    return this.update(
+      {
+        data,
+        lastUpdated: Date.now(),
+      },
+      cid
     )
-    return this.update(data, cid)
   }
 
   private isStale(): boolean {
-    console.log('DATASET: isStale')
     if (this.frequency === 'static') {
       return false
     }
@@ -105,15 +108,23 @@ export class Dataset<TData extends any = any> implements IDataset<TData> {
   }
 
   async init() {
-    console.log('DATASET: init')
-    // download the latest data after a peer sends a new CID
+    // download the latest payload after a peer sends a new CID
     this.node.on('receivedMessage', async (cid) => {
-      console.log('DATASET: received message', cid)
-      const data = await this.loader.download(this.node, cid)
-      this.update(data, cid)
+      const payload = await this.loader.download(this.node, cid)
+      if (payload.lastUpdated > this.lastUpdated) {
+        console.log('recieved new data')
+        this.update(payload, cid)
+      } else {
+        console.log('recieved old data')
+        await this.loader.loadHistorical(
+          this.node,
+          payload.data,
+          this.currentCID as string
+        )
+      }
     })
 
-    // download 
+    // TODO: is this needed? download data when its uploaded
     this.node.on('uploadedData', (cid: string) => {
       this.loader.download(this.node, cid)
     })
@@ -139,7 +150,6 @@ export class Dataset<TData extends any = any> implements IDataset<TData> {
   }
 
   get(): Promise<TData> {
-    console.log('DATASET: get')
     if (!this.lastUpdated) {
       return this.fetchWith(this.initializer)
     }
@@ -149,18 +159,16 @@ export class Dataset<TData extends any = any> implements IDataset<TData> {
     return Promise.resolve(this.cache.get())
   }
 
-  async set(newData: TData) {
-    const cid = await this.node.upload(stringify(newData))
-    console.log('DATASET: set to', newData, 'resulting in cid', cid)
-    this.update(newData, cid)
+  async set(newData: TNewData) {
+    const { cid, payload } = await this.loader.load(this.node, newData)
+    this.update(payload, cid)
     await this.node.sendMessage(cid)
   }
 
-  subscribe(handler: (data: TData) => void) {
-    console.log('DATASET: subscribe')
-    this.node.on('downloadedData', (json: string) => {
-      console.log('DATASET: downloaded data', json)
-      handler(JSON.parse(json))
+  subscribe(handler: (payload: IPayload<TData>) => void) {
+    this.node.on('uploadedData', async (cid: string) => {
+      const payload = await this.loader.download(this.node, cid)
+      handler(payload)
     })
   }
 }

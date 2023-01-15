@@ -10,6 +10,9 @@ async function main() {
   const chatDataset = new ChatDataset(node, 50)
   db.registerDatasets(key, chatDataset)
   await db.init()
+  db.subscribe(key, (messages) => {
+    console.log(`${key} updated:`, messages)
+  })
   await db.set(key, process.argv[2])
 }
 
