@@ -1,0 +1,55 @@
+{
+  "name": "bunnymen",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "source": "src/index.ts",
+  "main": "dist/main.cjs",
+  "module": "dist/module.js",
+  "types": "dist/types.d.ts",
+  "files": [
+    "dist"
+  ],
+  "alias": {
+    "src": "./src"
+  },
+  "repository": "git@github.com:element-fi/bunneymen.git",
+  "scripts": {
+    "build": "parcel build",
+    "start": "ts-node --esm -r dotenv/config -r tsconfig-paths/register src/node.ts",
+    "watch": "nodemon --esm -r dotenv/config -r tsconfig-paths/register src/node.ts",
+    "nodeExample": "ts-node --esm -r dotenv/config -r tsconfig-paths/register src/nodeExample.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^18.11.18",
+    "dotenv": "^16.0.3",
+    "nodemon": "^2.0.20",
+    "parcel": "^2.8.2",
+    "ts-node": "^10.9.1",
+    "tsconfig": "*",
+    "tsconfig-paths": "^4.1.2",
+    "typescript": "^4.9.4"
+  },
+  "dependencies": {
+    "@chainsafe/libp2p-gossipsub": "4.1.1",
+    "@chainsafe/libp2p-noise": "^8.0.1",
+    "@libp2p/bootstrap": "^2.0.0",
+    "@libp2p/interface-pubsub": "^3.0.5",
+    "@libp2p/kad-dht": "^3.0.4",
+    "@libp2p/mdns": "^3.0.0",
+    "@libp2p/mplex": "^5.2.0",
+    "@libp2p/pubsub-peer-discovery": "^6.0.1",
+    "@libp2p/tcp": "^3.0.6",
+    "@libp2p/webrtc-star": "^3.0.3",
+    "@libp2p/websockets": "3.0.4",
+    "fast-json-stable-stringify": "^2.1.0",
+    "ipfs-core": "^0.16.0",
+    "ipfs-core-types": "^0.14.0",
+    "it-to-buffer": "^3.0.0",
+    "js-sha3": "^0.8.0",
+    "libp2p": "^0.39.0",
+    "multiformats": "^9.6.5",
+    "nanoid": "3.3.4",
+    "uint8arrays": "^3.0.0"
+  }
+}

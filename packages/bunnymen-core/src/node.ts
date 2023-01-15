@@ -1,7 +1,7 @@
 import * as IPFS from 'ipfs-core'
 import { createLibp2p } from 'libp2p'
 import { MulticastDNS } from '@libp2p/mdns'
-import { KadDHT } from '@libp2p/kad-dht'
+// import { KadDHT } from '@libp2p/kad-dht'
 import { WebSockets } from '@libp2p/websockets'
 import { WebRTCStar } from '@libp2p/webrtc-star'
 import { Bootstrap } from '@libp2p/bootstrap'
@@ -9,15 +9,17 @@ import { Mplex } from '@libp2p/mplex'
 import { Noise } from '@chainsafe/libp2p-noise'
 import { GossipSub } from '@chainsafe/libp2p-gossipsub'
 import { PubSubPeerDiscovery } from '@libp2p/pubsub-peer-discovery'
-import type { CID } from 'multiformats/cid'
 import { TCP } from '@libp2p/tcp'
-import { PeerId, RSAPeerId } from '@libp2p/interface-peer-id'
-import { Message } from '@libp2p/kad-dht/dist/src/message'
 import { EventEmitter } from 'events'
 import os from 'os'
 import path from 'path'
 import { nanoid } from 'nanoid'
-import { createHash } from 'node:crypto'
+import sha3 from 'js-sha3'
+
+// this package was installed as a dependency of ipfs-core, but isn't in the
+// package.json because if the versions get out of sync, the typescript server
+// will throw errors.
+import type { Message } from '@libp2p/interface-pubsub'
 
 
 export interface INodeEvents {
@@ -36,10 +38,10 @@ export class Node extends EventEmitter {
 
     private _topic: string
     private _node
-    private _peerId: PeerId
+    private _peerId?: IPFS.Libp2pFactoryFnArgs['peerId']
     private _peers: string[]
-    private _currentLeader: string
-    private _currentCid: string
+    private _currentLeader?: string
+    private _currentCid?: string
     private _currentStep:  number = 0
     private _frequency = -1
     private POLLING_FREQENCY: number = 100
@@ -51,7 +53,7 @@ export class Node extends EventEmitter {
     constructor(topic: string) {
         super()
 
-        const libp2pBundle = (opts) => {
+        const libp2pBundle = (opts: IPFS.Libp2pFactoryFnArgs) => {
 
             this._peerId = opts.peerId
             const bootstrapList = opts.config.Bootstrap
@@ -85,8 +87,9 @@ export class Node extends EventEmitter {
 
     async subscribe(): Promise<void> {
         const node: IPFS.IPFS = await this._node
-        const receivedMessage = (message) => this.emit('receivedMessage', String.fromCharCode.apply(null, message.data))
-        node.pubsub.subscribe(this._topic,receivedMessage)
+        node.pubsub.subscribe(this._topic, (message) => {
+            this.emit('receivedMessage', new TextDecoder().decode(message.data))
+        })
         this.emit('subscribed', this._topic)
         this.selectLeader()
     }
@@ -136,18 +139,20 @@ export class Node extends EventEmitter {
     }
 
     isLeader(){
-        return this._currentLeader == this._peerId.toString()
+        return !!this._peerId && this._currentLeader == this._peerId.toString()
     }
 
     private selectLeader(){
         var peers = this._peers
         // add local peerId to peer list
-        peers.push(this._peerId.toString())
+        if (this._peerId) {
+            peers.push(this._peerId.toString())
+        }
         // create a list of objects { peerId, hash }
         // where we hash each peer with the currentCid
         const peerHashList = peers.map(peer => {
             var preimage = peer+this._currentCid
-            return {peerId: peer, hash: createHash('sha3-256').update(preimage).digest('hex')}
+            return {peerId: peer, hash: sha3.sha3_256(preimage) }
         })
         // sort the list alphanumerically
         const peerHashListSorted = peerHashList.sort((a,b)=>{
