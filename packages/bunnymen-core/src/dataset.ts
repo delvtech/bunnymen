@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events'
 import { ILoader, IPayload } from './loader.js'
 import { Node } from './node.js'
-import { Cache } from './cache.js'
+import { Cache } from './cache'
 
 export type Fetcher<TData extends any = any> = () => TData | Promise<TData>
 
