@@ -20,6 +20,8 @@ import { createHash } from 'node:crypto'
 import { PeerIdStr } from '@chainsafe/libp2p-gossipsub/dist/src/types'
 import { openStdin } from 'process'
 
+const isBrowser = typeof window !== 'undefined'
+
 
 export interface INodeEvents {
     subscribed: (property: string) => void
@@ -54,8 +56,6 @@ export class Node extends EventEmitter {
 
         const libp2pBundle = (opts: any) => {
             const bootstrapList = opts.config.bootstrap
-            const wRTCStar = webRTCStar()
-        
             return this.configureLibp2p(opts, bootstrapList)
         }
 
@@ -179,7 +179,23 @@ export class Node extends EventEmitter {
 
     // see https://github.com/libp2p/js-libp2p/blob/master/doc/CONFIGURATION.md
     private configureLibp2p(opts: any, bootstrapList: any) {
-        const wRTCStar = webRTCStar()
+        const transports = [webSockets()]
+        const peerDiscovery: any = [
+          bootstrap({
+            list: [
+              '/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
+              '/dnsaddr/bootstrap.libp2p.io/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',
+              '/dnsaddr/bootstrap.libp2p.io/p2p/QmZa1sAxajnQjVM8WjWXoMbmPd7NsWhfKsPkErzpm9wGkp',
+              '/dnsaddr/bootstrap.libp2p.io/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa',
+              '/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt'
+            ]
+          })
+        ]
+        if (isBrowser) {
+            const wRTCStar = webRTCStar()
+            transports.push(wRTCStar.transport)
+            peerDiscovery.push(wRTCStar.discovery)
+        }
         return createLibp2p({
             addresses: {
               // Add the signaling server address, along with our PeerId to our multiaddrs list
@@ -187,27 +203,14 @@ export class Node extends EventEmitter {
               // receive inbound connections from other peers
               listen: [
                 '/dns4/wrtc-star1.par.dwebops.pub/tcp/443/wss/p2p-webrtc-star',
-                '/dns4/wrtc-star2.sjc.dwebops.pub/tcp/443/wss/p2p-webrtc-star'
+                '/dns4/wrtc-star2.sjc.dwebops.pub/tcp/443/wss/p2p-webrtc-star',
+                '/ip4/0.0.0.0/tcp/0/ws',
               ]
             },
-            transports: [
-              webSockets(),
-              wRTCStar.transport
-            ],
+            transports,
             connectionEncryption: [noise()],
             streamMuxers: [mplex()],
-            peerDiscovery: [
-                wRTCStar.discovery,
-              bootstrap({
-                list: [
-                  '/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
-                  '/dnsaddr/bootstrap.libp2p.io/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',
-                  '/dnsaddr/bootstrap.libp2p.io/p2p/QmZa1sAxajnQjVM8WjWXoMbmPd7NsWhfKsPkErzpm9wGkp',
-                  '/dnsaddr/bootstrap.libp2p.io/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa',
-                  '/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt'
-                ]
-              })
-            ],
+            peerDiscovery,
             pubsub: gossipsub(
                 {
                 enabled: true,
