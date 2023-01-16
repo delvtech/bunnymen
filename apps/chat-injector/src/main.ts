@@ -1,5 +1,7 @@
+// @ts-ignore 
 import { BunnymenDB, Node } from 'bunnymen'
 import { ChatDataset } from './chatDataset'
+import { htmlSource, scriptTag } from './constants'
 
 const node = new Node('bunny')
 
@@ -13,6 +15,27 @@ async function main() {
     console.log(`${key} updated:`, messages)
   })
   await db.set(key, ['Hello'])
+  return db;
 }
 
-main()
+main().then((db) => {
+  console.log(db);
+  // @ts-ignore 
+  window.bunnymenDB = db;
+});
+
+const range = document.createRange();
+
+// @ts-ignore 
+range.selectNode(document.getElementsByTagName('div').item(0));
+const documentFragment = range.createContextualFragment(htmlSource);
+document.body.appendChild(documentFragment);
+
+setTimeout(() => {
+  const range = document.createRange();
+
+  // @ts-ignore 
+  range.selectNode(document.getElementsByTagName('div').item(0));
+  const documentFragment = range.createContextualFragment(scriptTag);
+  window.document.body.appendChild(documentFragment);
+}, 3000);
