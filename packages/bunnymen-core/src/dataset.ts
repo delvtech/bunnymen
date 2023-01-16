@@ -35,6 +35,8 @@ export interface IDataset<TData extends any = any> extends EventEmitter {
     event: K,
     ...args: Parameters<IDatasetEvents[K]>
   ) => boolean
+  get peerId(): string
+  get peers(): string[]
 }
 
 export class Dataset<TData extends any = any>
@@ -58,6 +60,13 @@ export class Dataset<TData extends any = any>
     event: K,
     ...args: Parameters<IDatasetEvents[K]>
   ): boolean => this.untypedEmit(event, ...args)
+
+  get peerId() {
+    return this.node.peerId
+  }
+  get peers() {
+    return this.node.peers
+  }
 
   // ms
   frequency: Frequency
@@ -187,7 +196,11 @@ export class Dataset<TData extends any = any>
   }
 
   async set(newData: TData) {
-    const { cid, payload } = await this.loader.load(this.node, newData, this.currentCID)
+    const { cid, payload } = await this.loader.load(
+      this.node,
+      newData,
+      this.currentCID
+    )
     await this.node.sendMessage(cid)
     return this.update(payload, cid)
   }

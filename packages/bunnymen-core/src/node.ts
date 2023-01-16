@@ -51,6 +51,13 @@ export class Node extends EventEmitter {
     public on = <K extends keyof INodeEvents>(event: K, listener: INodeEvents[K]): this => this._untypedOn(event, listener)
     public emit = <K extends keyof INodeEvents>(event: K, ...args: Parameters<INodeEvents[K]>): boolean => this._untypedEmit(event, ...args)
 
+    get peerId() {
+        return this._peerId
+    }
+    get peers() {
+        return this._peers
+    }
+
     constructor(topic: string) {
         super()
 
