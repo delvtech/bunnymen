@@ -1,6 +1,6 @@
 import * as IPFS from 'ipfs-core'
 import { createLibp2p } from 'libp2p'
-import { MulticastDNS } from '@libp2p/mdns'
+import { mdns } from '@libp2p/mdns'
 //import { kadDHT } from '@libp2p/kad-dht'
 import { webSockets } from '@libp2p/websockets'
 import { webRTCStar } from '@libp2p/webrtc-star'
@@ -187,7 +187,11 @@ export class Node extends EventEmitter {
 
     // see https://github.com/libp2p/js-libp2p/blob/master/doc/CONFIGURATION.md
     private configureLibp2p(opts: any, bootstrapList: any) {
-        const transports = [webSockets()]
+        const transports = [webSockets(), mdns({
+            broadcast: false, 
+            port: 50001,
+            compat: false
+          })(opts.peerId)]
         const peerDiscovery: any = [
           bootstrap({
             list: [
@@ -210,7 +214,7 @@ export class Node extends EventEmitter {
             const wRTCStar = webRTCStar()
             transports.push(wRTCStar.transport)
             peerDiscovery.push(wRTCStar.discovery)
-        }
+        } 
         return createLibp2p({
             addresses: {
               // Add the signaling server address, along with our PeerId to our multiaddrs list
