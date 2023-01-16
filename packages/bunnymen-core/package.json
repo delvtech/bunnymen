@@ -45,10 +45,9 @@
     "@libp2p/websockets": "^5.0.0",
     "@noble/hashes": "^1.1.5",
     "fast-json-stable-stringify": "^2.1.0",
-    "ipfs-core": "^0.18.0",
-    "ipfs-core-types": "^0.14.0",
-    "libp2p": "^0.42.0",
-    "multiformats": "^9.6.5",
+    "ipfs-core": "^0.18.0-6eeb1be5",
+    "libp2p": "^0.42.1-bd2bdf7c",
+    "multiformats": "^11.0.0",
     "nanoid": "3.3.4",
     "prom-client": "^14.0.0",
     "uint8arrays": "^3.0.0"
