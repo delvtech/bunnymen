@@ -9,14 +9,31 @@ export interface IPayload<TData> {
   lastUpdated: number
 }
 
-export interface ILoader<TData extends any = any> {
+export interface ILoaderOptions<TData = any, TNewData = TData> {
   /**
-   * @returns CID
+   * Used to transform new data coming in
    */
-  init: (node: Node, data: TData) => Promise<string>
+  transformer?: Transformer<[TNewData], TData>
+  /**
+   * Used to aggregate data instead of overwriting
+   */
+  aggregator?: Transformer<[TData | undefined, TData], TData>
+}
+
+export interface ILoader<TData = any, TNewData = TData> {
+  /**
+   * Ignores aggregator and replaces any existing data.
+   */
+  init: (
+    node: Node,
+    data: TNewData
+  ) => Promise<{
+    cid: string
+    payload: IPayload<TData>
+  }>
   load: (
     node: Node,
-    newData: TData,
+    newData: TNewData,
     currentCID?: string
   ) => Promise<{
     cid: string
@@ -33,63 +50,75 @@ export interface ILoader<TData extends any = any> {
   download: (node: Node, cid: string) => Promise<IPayload<TData>>
 }
 
-export class Loader<TData extends any = any>
-  implements ILoader<TData>
+export class Loader<TData = any, TNewData = TData>
+  implements ILoader<TData, TNewData>
 {
+  private transformer?: Transformer<[TNewData], TData>
   private aggregator?: Transformer<[TData | undefined, TData], TData>
 
-  constructor(
-    aggregator?: Transformer<[TData | undefined, TData], TData>,
-  ) {
-    this.aggregator = aggregator
+  constructor(options?: ILoaderOptions) {
+    this.transformer = options?.transformer
+    this.aggregator = options?.aggregator
   }
 
   /**
    * Factory method to return a strongly typed instance.
    */
-  static create<TData extends any = any>(
-    aggregator?: Transformer<[TData | undefined, TData], TData>,
-  ): Loader<TData> {
-    return new Loader(aggregator)
+  static create<TData = any, TNewData = any>(
+    options?: ILoaderOptions<TData, TNewData>
+  ): Loader<TData, TNewData> {
+    return new Loader(options)
   }
 
-  init(node: Node, data: TData) {
-    return node.upload(stringify(data))
-  }
-
-  async load(node: Node, newData: TData, currentCID?: string) {
-    const payload = {
-      data: newData as unknown as TData,
-      lastUpdated: Date.now(),
+  private async prepData(newData: TNewData, currentData?: TData) {
+    let data: TData | TNewData = newData
+    if (this.transformer) {
+      data = this.transformer(data)
     }
     if (this.aggregator) {
-      let currentPayload: IPayload<TData> | undefined = undefined
-      if (!!currentCID) {
-        const json = await node.download(currentCID)
-        currentPayload = JSON.parse(json)
-      }
-      payload.data = this.aggregator(currentPayload?.data, newData)
+      data = this.aggregator(currentData, data as TData)
+    }
+    return data as TData
+  }
+
+  async init(node: Node, data: TNewData) {
+    let transformedData = data as unknown as TData
+    if (this.transformer) {
+      transformedData = this.transformer(data)
+    }
+    const payload = {
+      data: transformedData,
+      lastUpdated: Date.now(),
+    }
+    const cid = await node.upload(stringify(payload))
+    return { cid, payload }
+  }
+
+  async load(node: Node, newData: TNewData, currentCID?: string) {
+    let currentData: TData | undefined
+    if (currentCID) {
+      const currentPayload = await this.download(node, currentCID)
+      currentData = currentPayload.data
+    }
+    const payload = {
+      data: await this.prepData(newData, currentData),
+      lastUpdated: Date.now(),
     }
     const cid = await node.upload(stringify(payload))
     return { cid, payload }
   }
 
   async loadHistorical(node: Node, oldData: TData, currentCID: string) {
-    const payload = {
-      data: oldData,
-      lastUpdated: Date.now(),
+    let payload = await this.download(node, currentCID)
+    if (!this.aggregator) {
+      return {
+        cid: currentCID,
+        payload: payload,
+      }
     }
-    if (this.aggregator) {
-      const currentJSON = await node.download(currentCID)
-      const currentPayload = JSON.parse(currentJSON)
-      console.log
-      payload.data = this.aggregator(oldData, currentPayload.data)
-    }
+    payload.data = await this.aggregator(oldData, payload.data)
     const cid = await node.upload(stringify(payload))
-    return {
-      cid,
-      payload,
-    }
+    return { cid, payload }
   }
 
   async download(node: Node, cid: string) {

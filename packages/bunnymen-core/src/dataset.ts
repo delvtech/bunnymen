@@ -3,17 +3,17 @@ import { ILoader, IPayload } from './loader.js'
 import { Node } from './node.js'
 import { Cache } from './cache'
 
-export type Fetcher<TData extends any = any> = () => TData | Promise<TData>
+export type Fetcher<TData = any> = () => TData | Promise<TData>
 
 // 'static' = never stale
 export type Frequency = number | 'static'
 
-export interface IDatasetEvents<TData extends any = any> {
+export interface IDatasetEvents<TData = any> {
   updated: (payload: IPayload<TData>) => void
 }
 
-export interface IDatasetOptions {
-  initializer?: Fetcher
+export interface IDatasetOptions<TData = any> {
+  initializer?: Fetcher<TData>
   initialContentId?: string
   /**
    * Number of ms until the data is considered stale. Set to `"static"` to
@@ -22,43 +22,43 @@ export interface IDatasetOptions {
   frequency?: Frequency
 }
 
-export interface IDataset<TData extends any = any> extends EventEmitter {
+export interface IDataset<TData = any, TNewData = TData> extends EventEmitter {
   init: () => Promise<void>
   get: () => Promise<TData>
-  set: (newData: TData) => Promise<TData>
+  set: (newData: TNewData) => Promise<TData>
   subscribe: (handler: (payload: IPayload<TData>) => void) => void
   on: <K extends keyof IDatasetEvents<TData>>(
     event: K,
-    listener: IDatasetEvents[K]
+    listener: IDatasetEvents<TData>[K]
   ) => this
   emit: <K extends keyof IDatasetEvents<TData>>(
     event: K,
-    ...args: Parameters<IDatasetEvents[K]>
+    ...args: Parameters<IDatasetEvents<TData>[K]>
   ) => boolean
   get peerId(): string
   get peers(): string[]
 }
 
-export class Dataset<TData extends any = any>
+export class Dataset<TData = any, TNewData = TData>
   extends EventEmitter
-  implements IDataset<TData>
+  implements IDataset<TData, TNewData>
 {
   private node: Node
   // keep this around to rerun during validation
-  private initializer: Fetcher<TData>
-  private fetcher: Fetcher<TData>
-  private loader: ILoader<TData>
+  private initializer: Fetcher<TNewData>
+  private fetcher: Fetcher<TNewData>
+  private loader: ILoader<TData, TNewData>
   private currentCID?: string
   private cache: Cache<TData>
   private untypedOn = this.on
   private untypedEmit = this.emit
-  public on = <K extends keyof IDatasetEvents>(
+  public on = <K extends keyof IDatasetEvents<TData>>(
     event: K,
-    listener: IDatasetEvents[K]
+    listener: IDatasetEvents<TData>[K]
   ): this => this.untypedOn(event, listener)
-  public emit = <K extends keyof IDatasetEvents>(
+  public emit = <K extends keyof IDatasetEvents<TData>>(
     event: K,
-    ...args: Parameters<IDatasetEvents[K]>
+    ...args: Parameters<IDatasetEvents<TData>[K]>
   ): boolean => this.untypedEmit(event, ...args)
 
   get peerId() {
@@ -78,7 +78,7 @@ export class Dataset<TData extends any = any>
     node: Node,
     fetcher: Fetcher,
     loader: ILoader,
-    options?: IDatasetOptions
+    options?: IDatasetOptions<TData>
   ) {
     super()
     const {
@@ -99,12 +99,12 @@ export class Dataset<TData extends any = any>
   /**
    * Factory method to return a strongly typed instance.
    */
-  static create<TData extends any = any>(
+  static create<TData = any, TNewData = TData>(
     node: Node,
-    fetcher: Fetcher<TData>,
-    loader: ILoader<TData>,
-    options?: IDatasetOptions
-  ): Dataset<TData> {
+    fetcher: Fetcher<TNewData>,
+    loader: ILoader<TData, TNewData>,
+    options?: IDatasetOptions<TData>
+  ): Dataset<TData, TNewData> {
     return new Dataset(node, fetcher, loader, options)
   }
 
@@ -116,17 +116,10 @@ export class Dataset<TData extends any = any>
     return payload.data
   }
 
-  private async fetchWith(fetcher: Fetcher<TData>) {
-    // TODO: add to queue / toggle isFetching
+  private async fetchWith(fetcher: Fetcher<TNewData>) {
     const data = await fetcher()
-    const cid = await this.loader.init(this.node, data)
-    return this.update(
-      {
-        data,
-        lastUpdated: Date.now(),
-      },
-      cid
-    )
+    const { cid, payload } = await this.loader.init(this.node, data)
+    return this.update(payload, cid)
   }
 
   private isStale(): boolean {
@@ -141,28 +134,18 @@ export class Dataset<TData extends any = any>
 
   async init() {
     // download the latest payload after a peer sends a new CID
-    this.node.on('receivedMessage', async (cid) => {
-      const newPayload = await this.loader.download(this.node, cid)
+    this.node.on('receivedMessage', async (newCID) => {
+      const newPayload = await this.loader.download(this.node, newCID)
       if (newPayload.lastUpdated > this.lastUpdated) {
-        const { cid, payload } = await this.loader.load(
-          this.node,
-          newPayload.data,
-          this.currentCID
-        )
-        this.update(payload, cid)
+        this.update(newPayload, newCID)
       } else {
-        const { payload } = await this.loader.loadHistorical(
+        const { payload, cid } = await this.loader.loadHistorical(
           this.node,
           newPayload.data,
           this.currentCID as string
         )
         this.update(payload, cid)
       }
-    })
-
-    // TODO: is this needed? download data when its uploaded
-    this.node.on('uploadedData', (cid: string) => {
-      this.loader.download(this.node, cid)
     })
 
     this.node.on('peerSubscribed', (peerId) => {
@@ -195,7 +178,7 @@ export class Dataset<TData extends any = any>
     return Promise.resolve(this.cache.get())
   }
 
-  async set(newData: TData) {
+  async set(newData: TNewData) {
     const { cid, payload } = await this.loader.load(
       this.node,
       newData,
