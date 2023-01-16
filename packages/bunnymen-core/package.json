@@ -47,7 +47,6 @@
     "fast-json-stable-stringify": "^2.1.0",
     "ipfs-core": "^0.18.0",
     "ipfs-core-types": "^0.14.0",
-    "it-to-buffer": "^3.0.0",
     "libp2p": "^0.42.0",
     "multiformats": "^9.6.5",
     "nanoid": "3.3.4",

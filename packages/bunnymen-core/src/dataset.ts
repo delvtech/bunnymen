@@ -26,7 +26,6 @@ export interface IDataset<TData = any, TNewData = TData> extends EventEmitter {
   init: () => Promise<void>
   get: () => Promise<TData>
   set: (newData: TNewData) => Promise<TData>
-  subscribe: (handler: (payload: IPayload<TData>) => void) => void
   on: <K extends keyof IDatasetEvents<TData>>(
     event: K,
     listener: IDatasetEvents<TData>[K]
@@ -122,7 +121,7 @@ export class Dataset<TData = any, TNewData = TData>
     return this.update(payload, cid)
   }
 
-  private isStale(): boolean {
+  private isStale() {
     if (this.frequency === 'static') {
       return false
     }
@@ -186,9 +185,5 @@ export class Dataset<TData = any, TNewData = TData>
     )
     await this.node.sendMessage(cid)
     return this.update(payload, cid)
-  }
-
-  subscribe(handler: (payload: IPayload<TData>) => void) {
-    this.on('updated', handler)
   }
 }
