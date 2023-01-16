@@ -1,4 +1,4 @@
-import { Dataset, IDataset } from './dataset.js'
+import { IDataset } from './dataset.js'
 import { Transformer } from './types.js'
 
 export interface IBunnymenDB {
