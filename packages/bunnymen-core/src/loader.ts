@@ -1,5 +1,4 @@
 import stringify from 'fast-json-stable-stringify'
-import toBuffer from 'it-to-buffer'
 import { Node } from './node.js'
 import { Transformer } from './types.js'
 
