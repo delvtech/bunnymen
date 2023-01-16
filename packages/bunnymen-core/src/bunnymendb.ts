@@ -1,4 +1,4 @@
-import { IDataset } from './dataset.js'
+import { Dataset, IDataset } from './dataset.js'
 import { Transformer } from './types.js'
 
 export interface IBunnymenDB {
@@ -13,6 +13,11 @@ export interface IBunnymenDB {
 export class BunnymenDB implements IBunnymenDB {
   private datasets: Record<string, IDataset[]> = {}
   private transformers: Record<string | never, Transformer> = {}
+
+  get peers() {
+    const flattened = ([] as IDataset[]).concat(...Object.values(this.datasets))
+    return ([] as string[]).concat(...flattened.map((dataset) => dataset.peers))
+  }
 
   registerDatasets(key: string, ...datasets: IDataset[]) {
     this.datasets[key] = [...(this.datasets[key] || []), ...datasets]
