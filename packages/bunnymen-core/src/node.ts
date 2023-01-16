@@ -1,14 +1,15 @@
 import * as IPFS from 'ipfs-core'
 import { createLibp2p } from 'libp2p'
 import { mdns } from '@libp2p/mdns'
-//import { kadDHT } from '@libp2p/kad-dht'
+import { kadDHT } from '@libp2p/kad-dht'
 import { webSockets } from '@libp2p/websockets'
+import { tcp } from '@libp2p/tcp'
 import { webRTCStar } from '@libp2p/webrtc-star'
 import { bootstrap } from '@libp2p/bootstrap'
 import { mplex } from '@libp2p/mplex'
 import { noise } from '@chainsafe/libp2p-noise'
 import { gossipsub, GossipSubComponents } from '@chainsafe/libp2p-gossipsub'
-import { PubSubPeerDiscovery } from '@libp2p/pubsub-peer-discovery'
+import { pubsubPeerDiscovery } from '@libp2p/pubsub-peer-discovery'
 import type { CID } from 'multiformats/cid'
 import { PeerId, RSAPeerId } from '@libp2p/interface-peer-id'
 import { Message } from '@libp2p/kad-dht/dist/src/message'
@@ -67,7 +68,8 @@ export class Node extends EventEmitter {
 
   constructor(topic: string) {
     super()
-
+    this._topic = topic
+    this._peers = new Array(0)
     const libp2pBundle = (opts: any) => {
       this._peerId = opts.peerId.toString()
       const bootstrapList = opts.config.bootstrap
@@ -78,9 +80,6 @@ export class Node extends EventEmitter {
       repo: path.join(os.tmpdir(), `repo-${nanoid()}`),
       libp2p: libp2pBundle,
     })
-
-    this._topic = topic
-    this._peers = new Array(0)
   }
 
   async poll(frequency: number) {
@@ -206,20 +205,26 @@ export class Node extends EventEmitter {
     const peerDiscovery: any = [
       bootstrap({
         list: [
-          '/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
-          '/dnsaddr/bootstrap.libp2p.io/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',
-          '/dnsaddr/bootstrap.libp2p.io/p2p/QmZa1sAxajnQjVM8WjWXoMbmPd7NsWhfKsPkErzpm9wGkp',
-          '/dnsaddr/bootstrap.libp2p.io/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa',
-          '/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt',
+          '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
+          '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',
+          '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmZa1sAxajnQjVM8WjWXoMbmPd7NsWhfKsPkErzpm9wGkp',
+          '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa',
+          '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt',
           '/ip4/104.131.131.82/tcp/4001/ipfs/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ',
           '/dnsaddr/bootstrap.libp2p.io/ipfs/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
           '/dnsaddr/bootstrap.libp2p.io/ipfs/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa',
+          '/ip4/127.0.0.1/tcp/35513/ws/p2p/12D3KooWLH544tVBchctgDf8Awy7Rtx3dFrPNZdmLCCEmMCFNXFr'
         ],
         timeout: 1000, // in ms,
         tagName: 'bootstrap',
         tagValue: 50,
         tagTTL: 120000, // in ms
       }),
+      pubsubPeerDiscovery({
+        interval: 5000,
+        topics: [this._topic], 
+        listenOnly: false
+    })
     ]
     if (isBrowser) {
       const wRTCStar = webRTCStar()
@@ -233,6 +238,7 @@ export class Node extends EventEmitter {
           compat: false,
         })
       )
+      transports.push(tcp())
     }
     return createLibp2p({
       addresses: {
@@ -243,6 +249,9 @@ export class Node extends EventEmitter {
           '/dns4/wrtc-star1.par.dwebops.pub/tcp/443/wss/p2p-webrtc-star',
           '/dns4/wrtc-star2.sjc.dwebops.pub/tcp/443/wss/p2p-webrtc-star',
           '/ip4/0.0.0.0/tcp/0/ws',
+          '/ip4/0.0.0.0/tcp/0',
+          '/ip4/127.0.0.1/tcp/0/ws',
+          '/ip4/127.0.0.1/tcp/0',
         ],
       },
       transports,
@@ -256,7 +265,6 @@ export class Node extends EventEmitter {
           active: true,
         },
       },
-      //kaddht: kadDHT(),
       pubsub: gossipsub({
         enabled: true,
         emitSelf: false,
