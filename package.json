@@ -10,11 +10,14 @@
     "build": "turbo run build",
     "dev": "turbo run dev --parallel",
     "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "postinstall": "husky install"
   },
   "devDependencies": {
     "@parcel/packager-ts": "2.8.2",
     "@parcel/transformer-typescript-types": "2.8.2",
+    "husky": ">=6",
+    "lint-staged": ">=10",
     "prettier": "latest",
     "turbo": "latest",
     "typescript": ">=3.0.0"
@@ -23,5 +26,8 @@
     "node": ">=14.0.0"
   },
   "dependencies": {},
-  "packageManager": "yarn@1.22.19"
+  "packageManager": "yarn@1.22.19",
+  "lint-staged": {
+    "{apps,packages}/**/*.{js,jsx,ts,tsx,md,html,json}": "prettier --write"
+  }
 }
