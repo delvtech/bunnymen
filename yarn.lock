@@ -4130,10 +4130,10 @@ libp2p@^0.42.0:
     wherearewe "^2.0.0"
     xsalsa20 "^1.1.0"
 
-libp2p@^0.42.1:
-  version "0.42.1-bd2bdf7c"
-  resolved "https://registry.yarnpkg.com/libp2p/-/libp2p-0.42.1-bd2bdf7c.tgz#6d0054885b2c3095c7e0b1836ab2940dcfca80b0"
-  integrity sha512-6AvCxyYjvbs4w7KIgPtKuAW/68fYdaJvli+dx/G0ayNmQMRdGbCIj1mhcZwyGOxkCy6NqCVSISsSLMixXi33xA==
+libp2p@^0.42.1-bd2bdf7c:
+  version "0.42.1-c6718b2e"
+  resolved "https://registry.yarnpkg.com/libp2p/-/libp2p-0.42.1-c6718b2e.tgz#66345ee40858033af9202731c54057b7e9d1080c"
+  integrity sha512-Dn/6aDLljVjxmNLGuSEBJSl2zDc0i+RnWPHQ6q/00Mjfof7aTns8XBNSbsjRJ4DMLtuFkQdy6aRRdvNYUVXZuw==
   dependencies:
     "@achingbrain/nat-port-mapper" "^1.0.3"
     "@libp2p/crypto" "^1.0.4"
