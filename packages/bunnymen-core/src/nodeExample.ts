@@ -1,7 +1,7 @@
 import { Node } from './node.js'
 
 export async function main() {
-    const topic = 'frank'
+    const topic = 'kjkjkjhdgxgcvjdjdmncnxjs'
     const node = new Node(topic)
     
     let numPeers = 0
@@ -50,6 +50,10 @@ export async function main() {
     node.subscribe()
     node.poll(5000) 
     node.upload(counter.toString())
+
+    // setInterval(async () => {
+    //     node.sendMessage("foo")
+    //   }, 1000)
     
 }
 
