@@ -1,7 +1,7 @@
 import { Node } from './node.js'
 
 export async function main() {
-    const topic = 'frank'
+    const topic = 'kjkjkjhdgxgcvjdjdmncnxjs'
     const node = new Node(topic)
     
     let numPeers = 0

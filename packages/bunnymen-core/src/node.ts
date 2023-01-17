@@ -1,5 +1,5 @@
 import * as IPFS from 'ipfs-core'
-import { createLibp2p } from 'libp2p'
+import { createLibp2p, Libp2p } from 'libp2p'
 import { mdns } from '@libp2p/mdns'
 import { kadDHT } from '@libp2p/kad-dht'
 import { webSockets } from '@libp2p/websockets'
@@ -8,9 +8,9 @@ import { webRTCStar } from '@libp2p/webrtc-star'
 import { bootstrap } from '@libp2p/bootstrap'
 import { mplex } from '@libp2p/mplex'
 import { noise } from '@chainsafe/libp2p-noise'
-import { gossipsub, GossipSubComponents } from '@chainsafe/libp2p-gossipsub'
+import { gossipsub } from '@chainsafe/libp2p-gossipsub'
 import { pubsubPeerDiscovery } from '@libp2p/pubsub-peer-discovery'
-import type { CID } from 'multiformats/cid'
+import { CID } from 'multiformats/cid'
 import { PeerId, RSAPeerId } from '@libp2p/interface-peer-id'
 import { Message } from '@libp2p/kad-dht/dist/src/message'
 import { EventEmitter } from 'events'
@@ -38,6 +38,8 @@ export interface INodeEvents {
 export class Node extends EventEmitter {
   private _topic: string
   private _node
+  private _libp2p
+  private _opts: any
   private _peerId: PeerIdStr = ''
   private _peers: string[]
   private _currentLeader: string = ''
@@ -70,15 +72,16 @@ export class Node extends EventEmitter {
     super()
     this._topic = topic
     this._peers = new Array(0)
-    const libp2pBundle = (opts: any) => {
+    this._libp2p = ((opts: any) => {
+      this._opts = opts
       this._peerId = opts.peerId.toString()
       const bootstrapList = opts.config.bootstrap
-      return this.configureLibp2p(opts, bootstrapList)
-    }
-
+      return this.configureLibp2p()
+    })
+    
     this._node = IPFS.create({
       repo: path.join(os.tmpdir(), `repo-${nanoid()}`),
-      libp2p: libp2pBundle,
+      libp2p: this._libp2p,
     })
   }
 
@@ -103,7 +106,7 @@ export class Node extends EventEmitter {
         'receivedMessage',
         String.fromCharCode.apply(null, message.data)
       )
-    node.pubsub.subscribe(this._topic, receivedMessage)
+    node.pubsub.subscribe(this._topic,receivedMessage)
     this.emit('subscribed', this._topic)
     this.selectLeader()
   }
@@ -127,7 +130,7 @@ export class Node extends EventEmitter {
       path: this._topic,
       content: new TextEncoder().encode(data),
     })
-    this._currentCid = file.cid.toString()
+    this._currentCid = file.cid.toString()//.toV1().toString()
     this.emit('uploadedData', this._currentCid)
     return this._currentCid
   }
@@ -136,7 +139,7 @@ export class Node extends EventEmitter {
     const node: IPFS.IPFS = await this._node
     const decoder = new TextDecoder()
     let data = ''
-
+    //const cid_v1 = CID.parse(cid).toV1().toString()
     for await (const chunk of node.cat(cid)) {
       data += decoder.decode(chunk, {
         stream: true,
@@ -200,31 +203,40 @@ export class Node extends EventEmitter {
   }
 
   // see https://github.com/libp2p/js-libp2p/blob/master/doc/CONFIGURATION.md
-  private configureLibp2p(opts: any, bootstrapList: any) {
+  private configureLibp2p() {
     const transports = [webSockets()]
+    const boostraplist = [
+        '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
+        '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',
+        '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmZa1sAxajnQjVM8WjWXoMbmPd7NsWhfKsPkErzpm9wGkp',
+        '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa',
+        '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt',
+      ]
+    //   var newlist = []
+    //   for (const add of boostraplist) {
+    //       const v0str = add.replace(/.*\//, '');
+    //       const v1str = '/dnsaddr/bootstrap.libp2p.io/ws/p2p/' +CID.parse(v0str).toV1().toString()
+    //       console.log(v1str)
+    //       newlist.push(v1str)
+    //   }
     const peerDiscovery: any = [
       bootstrap({
-        list: [
-          '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
-          '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',
-          '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmZa1sAxajnQjVM8WjWXoMbmPd7NsWhfKsPkErzpm9wGkp',
-          '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa',
-          '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt',
-          '/ip4/104.131.131.82/tcp/4001/ipfs/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ',
-          '/dnsaddr/bootstrap.libp2p.io/ipfs/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
-          '/dnsaddr/bootstrap.libp2p.io/ipfs/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa',
-          '/ip4/127.0.0.1/tcp/35513/ws/p2p/12D3KooWLH544tVBchctgDf8Awy7Rtx3dFrPNZdmLCCEmMCFNXFr'
-        ],
-        timeout: 1000, // in ms,
+        list: boostraplist,
+        timeout: 10000, // in ms,
         tagName: 'bootstrap',
         tagValue: 50,
         tagTTL: 120000, // in ms
       }),
-      pubsubPeerDiscovery({
-        interval: 5000,
-        topics: [this._topic], 
-        listenOnly: false
-    })
+    // TODO: commented out bc it causes an error: 
+    // Error: invalid wire type 6 at offset 10
+    // @libp2p/pubsub-peer-discovery/src/peer.ts:76:12)
+    //
+    //   pubsubPeerDiscovery({
+    //     interval: 5000,
+    //     topics: [this._topic], 
+    //     listenOnly: false
+    // })
+
     ]
     if (isBrowser) {
       const wRTCStar = webRTCStar()
@@ -233,9 +245,9 @@ export class Node extends EventEmitter {
     } else {
       peerDiscovery.push(
         mdns({
-          broadcast: false,
-          port: 50001,
-          compat: false,
+          broadcast: true,
+          port: 50002,
+          compat: true,
         })
       )
       transports.push(tcp())
@@ -246,6 +258,7 @@ export class Node extends EventEmitter {
         // libp2p will automatically attempt to dial to the signaling server so that it can
         // receive inbound connections from other peers
         listen: [
+          '/dns4/star.sc2.nl/tcp/443/wss/p2p-webrtc-star',
           '/dns4/wrtc-star1.par.dwebops.pub/tcp/443/wss/p2p-webrtc-star',
           '/dns4/wrtc-star2.sjc.dwebops.pub/tcp/443/wss/p2p-webrtc-star',
           '/ip4/0.0.0.0/tcp/0/ws',
@@ -253,6 +266,11 @@ export class Node extends EventEmitter {
           '/ip4/127.0.0.1/tcp/0/ws',
           '/ip4/127.0.0.1/tcp/0',
         ],
+      },
+      connectionManager: {
+        pollInterval: 5000,
+        autoDial: true, // auto dial to peers we find when we have less peers than `connectionManager.minPeers`,
+        minConnections: 20
       },
       transports,
       connectionEncryption: [noise()],
@@ -269,6 +287,7 @@ export class Node extends EventEmitter {
         enabled: true,
         emitSelf: false,
         allowPublishToZeroPeers: true,
+        floodPublish: true
       }),
     })
   }
