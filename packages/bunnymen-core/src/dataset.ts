@@ -13,8 +13,8 @@ export interface IDatasetEvents<TData = any> {
   updated: (payload: IPayload<TData>) => void
 }
 
-export interface IDatasetOptions<TData = any> {
-  initializer?: Fetcher<TData>
+export interface IDatasetOptions<TNewData = any> {
+  initializer?: Fetcher<TNewData>
   initialContentId?: string
   /**
    * Number of ms until the data is considered stale. Set to `"static"` to
@@ -78,7 +78,7 @@ export class Dataset<TData = any, TNewData = TData>
     node: Node,
     fetcher: Fetcher,
     loader: ILoader,
-    options?: IDatasetOptions<TData>
+    options?: IDatasetOptions<TNewData>
   ) {
     super()
     const {
@@ -103,7 +103,7 @@ export class Dataset<TData = any, TNewData = TData>
     node: Node,
     fetcher: Fetcher<TNewData>,
     loader: ILoader<TData, TNewData>,
-    options?: IDatasetOptions<TData>
+    options?: IDatasetOptions<TNewData>
   ): Dataset<TData, TNewData> {
     return new Dataset(node, fetcher, loader, options)
   }
