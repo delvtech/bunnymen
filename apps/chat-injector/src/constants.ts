@@ -158,10 +158,11 @@ window.bunnymenDB.subscribe('chat', (messages) => {
     if (helped) {
         currentLength = messages.data.length;
         if (prevLength === 50) {
-            term.echo((new Date(1673834092558)).toISOString() + ' bunnymen' + Math.floor((Math.random() * 50)) + ': ' + messages.data[49]);
+            const lastMessage = messages.data[49]
+            term.echo(new Date(lastMessage.timestamp).toISOString() + ' ' + lastMessage.user + ': ' + lastMessage.content);
         } else {
             for (let key = prevLength; key <= prevLength; key++) {
-                term.echo((new Date(1673834092558)).toISOString() + ' bunnymen' + Math.floor((Math.random() * 50)) + ': ' + messages.data[key]);
+                term.echo(new Date(messages.data[key].timestamp).toISOString() + ' ' + messages.data[key].user + ': ' + messages.data[key].content);
             }    
         }
     }
