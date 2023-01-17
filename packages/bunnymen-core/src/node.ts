@@ -183,16 +183,16 @@ export class Node extends EventEmitter {
 
   private async checkForNewPeers() {
     const node: IPFS.IPFS = await this._node
-    var prevPeers: string[] = this._peers
+    const prevPeers: string[] = this._peers
     this._peers = (await node.pubsub.peers(this._topic)).map(String)
 
-    var peersLeft = prevPeers.filter(
+    const peersLeft = prevPeers.filter(
       (prevPeer: string) =>
         prevPeer != this._peerId && !this._peers.includes(prevPeer)
     )
     peersLeft.forEach((peer) => this.emit('peerUnsubscribed', peer.toString()))
 
-    var peersJoined = this._peers.filter(
+    const peersJoined = this._peers.filter(
       (peer: string) => !prevPeers.includes(peer)
     )
     peersJoined.forEach((peer) => this.emit('peerSubscribed', peer.toString()))
@@ -269,7 +269,7 @@ export class Node extends EventEmitter {
       },
       connectionManager: {
         pollInterval: 5000,
-        autoDial: true, // auto dial to peers we find when we have less peers than `connectionManager.minPeers`,
+        autoDial: true, // auto dial to peers we find when we have less peers than `connectionManager.minConnections`,
         minConnections: 20
       },
       transports,
