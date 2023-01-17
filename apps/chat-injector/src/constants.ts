@@ -1,6 +1,6 @@
-<!DOCTYPE HTML>
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
+export const htmlSource = `
+<div id="#terminal"/>
+<div>
     <meta charset="utf-8" />
     <title>Gaiman Text Game</title>
     <!--[if IE]>
@@ -8,7 +8,6 @@
     <![endif]-->
     <script src="https://cdn.jsdelivr.net/npm/jquery"></script>
     <script src="https://cdn.jsdelivr.net/npm/jquery.terminal/js/jquery.terminal.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jquery.terminal/js/xml_formatting.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/jquery.terminal/css/jquery.terminal.min.css" rel="stylesheet"/>
     <script src="https://cdn.jsdelivr.net/combine/npm/js-polyfills/keyboard.js,gh/jcubic/static/js/wcwidth.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -33,8 +32,8 @@ body {
     height: 100vh;
 }
     </style>
-</head>
-<body>
+</div>
+<div>
 <template id="greetings">
 ......................................................................
 ................#.*/.........................../,.....(...............
@@ -68,16 +67,18 @@ body {
 .........,@@%#,...........................................*@#&........
 .........@@&*..............................................&&&#.......
 
-
     ____  __  ___   ___   ____  ____  __________   __
-   / __ )/ / / / | / / | / /\ \/ /  |/  / ____/ | / /
-  / __  / / / /  |/ /  |/ /  \  / /|_/ / __/ /  |/ / 
+   / __ )/ / / / | / / | / /\\ \\/ /  |/  / ____/ | / /
+  / __  / / / /  |/ /  |/ /  \\  / /|_/ / __/ /  |/ / 
  / /_/ / /_/ / /|  / /|  /   / / /  / / /___/ /|  /  
-/_____/\____/_/ |_/_/ |_/   /_/_/  /_/_____/_/ |_/   
+/_____/\\____/_/ |_/_/ |_/   /_/_/  /_/_____/_/ |_/   
                                                                        
     </template>     
 <div id="term">
-</div><script>
+</div>`
+
+export const scriptTag = `
+<script>
 var is_iframe = (function() {
     try {
         return window.self !== window.top;
@@ -99,9 +100,10 @@ if (is_iframe) {
 
 var term;
 var initialized = false;
+let helped = false;
 
 function ready() {
-    term = $('body').terminal(function(cmd, ...args) {        
+    term = $('#term').terminal(function(cmd, ...args) {        
         this.list = () => {
             this.echo('[[;rgba(205,205,0,0.99);]Current Sessions...]');
             for (let i = 0; i < 6; i++) {
@@ -110,21 +112,11 @@ function ready() {
         }
 
         this.error = (msg) => {
-            this.echo(`[[b;red;black]Error: ${msg}]`);
+            this.echo('[[b;red;black);]Error: \' + \'msg]');
         }
 
         if (cmd === 'chat' && !initialized) {
             initialized = true;
-            this.echo('bunnyman 10: Hello, is anyone there?');
-            this.echo('bunnyman 4: We have connected');
-            this.echo('\n[[;rgba(205,205,0,0.99);]bunnyman 22 joined the chat]');
-            this.echo('\n[[;rgba(205,205,0,0.99);]bunnyman 22 left the chat]');
-            this.echo('bunnyman 7: GM');
-            this.echo('bunnyman 4: GM muthafuckas');
-            this.exec('bunnyman 69: \&lt;\script>\&lt;script\>')
-            this.error('You cannot inject HTML. Session Terminating...');
-            this.exec('bunnyman69: I tried to inject you');
-            return this.exec('bunnyman69: you all are weirdos');
         }
 
         if (cmd === 'ls') {
@@ -132,11 +124,17 @@ function ready() {
         }
 
         if (cmd === 'help') {
-            return this.echo('[[;rgba(0, 100, 100);]\n\nWelcome to Bunnymen.\n\nBreak free from centralized eth nodes & providers.\nBunnymen uses your browser to become a node.\nIt shares/uploads application data with other browsers.\nIt is like torrent, but runs in the browser.\n\nA few usecaes:\n-Decentralized Frontends\n-Reduced reliance on node providers\n-User safety and data sovereignty\n\nThis is a chat application, your privacy is maintained.\n\nTo start, press chat...\n\nor press exit to terminatee...]', { typing: true, delay: 20 });
+            this.echo('[[;rgba(0, 100, 100);black]\\n\\nWelcome to Bunnymen.\\n\\nThe website and data on this page are all shared with you by other browser visitors.\\nYou are now sharing this data and also serving up the HTML for this site to other visitors.\\nBunnymen uses your browser to become a node and peer directly with other browsers.\\nWe don\\'t have to use centralized services.\\n\\nA few usecaes:\\n-Decentralized Frontends\\n-Reduced reliance on node providers\\n-User safety and data sovereignty\\n\\nThis is a chat application, your privacy is maintained.\\n\\nYou may now chat...]');
+            helped = true;
+            return;
         }
 
         if (['mkdir', 'cd', 'ps', 'grep', 'ssh', 'curl'].includes(cmd)) {
-            this.echo('[[;rgba(205,205,0,0.99);]Stay Tuned, these commands and many more are coming... \nWe believe in a world where data is open and you have direct access. Consider this your future terminal.]');
+            this.echo('[[;rgba(205,205,0,0.99);]Stay Tuned, these commands and many more are coming... \\nWe believe in a world where data is open and you have direct access. Consider this your future terminal.]')
+        }
+
+        if (helped) {
+            return window.bunnymenDB.set('chat', [cmd]);
         }
 
         if (!initialized) {
@@ -144,17 +142,32 @@ function ready() {
         }
     }, {
         onInit() {
-            this.echo('\n[[;rgba(0, 100, 100);]Bunnymen vBeta0.0.] Welcome Anon\n');
-            this.echo('\n[[;rgba(0, 100, 100);black]Press help to get started...]');
+            this.echo('\\n[[;rgba(0, 100, 100);]Bunnymen vBeta0.0.] Welcome Anon\\n');
+            this.echo('\\n[[;rgba(0, 100, 100);black]Press help to get started...]');
         },
         greetings: greetings.innerHTML,
         prompt: "[[;rgba(0, 100, 100);black]>>> ]",
     });
 }
 
+setTimeout(ready, 5);
+let prevLength = 0;
+let currentLength;
 
-$(document).ready(ready);
-
-</script>
-</body>
+window.bunnymenDB.subscribe('chat', (messages) => {
+    if (helped) {
+        currentLength = messages.data.length;
+        if (prevLength === 50) {
+            term.echo((new Date(1673834092558)).toISOString() + ' bunnymen' + Math.floor((Math.random() * 50)) + ': ' + messages.data[49]);
+        } else {
+            for (let key = prevLength; key <= prevLength; key++) {
+                term.echo((new Date(1673834092558)).toISOString() + ' bunnymen' + Math.floor((Math.random() * 50)) + ': ' + messages.data[key]);
+            }    
+        }
+    }
+    prevLength = currentLength;
+});
+<\/script>
+</div>
 </html>
+`;
