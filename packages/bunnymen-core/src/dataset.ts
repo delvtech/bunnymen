@@ -1,7 +1,8 @@
 import { EventEmitter } from 'events'
-import { ILoader, IPayload } from './loader.js'
+import { ILoader } from './loader.js'
 import { Node } from './node.js'
 import { Cache } from './cache'
+import type { IPayload } from './types.js'
 
 export type Fetcher<TData = any> = () => TData | Promise<TData>
 
@@ -12,8 +13,8 @@ export interface IDatasetEvents<TData = any> {
   updated: (payload: IPayload<TData>) => void
 }
 
-export interface IDatasetOptions<TData = any> {
-  initializer?: Fetcher<TData>
+export interface IDatasetOptions<TNewData = any> {
+  initializer?: Fetcher<TNewData>
   initialContentId?: string
   /**
    * Number of ms until the data is considered stale. Set to `"static"` to
@@ -24,8 +25,8 @@ export interface IDatasetOptions<TData = any> {
 
 export interface IDataset<TData = any, TNewData = TData> extends EventEmitter {
   init: () => Promise<void>
-  get: () => Promise<TData>
-  set: (newData: TNewData) => Promise<TData>
+  get: () => Promise<IPayload<TData>>
+  set: (newData: TNewData) => Promise<IPayload<TData>>
   on: <K extends keyof IDatasetEvents<TData>>(
     event: K,
     listener: IDatasetEvents<TData>[K]
@@ -48,7 +49,7 @@ export class Dataset<TData = any, TNewData = TData>
   private fetcher: Fetcher<TNewData>
   private loader: ILoader<TData, TNewData>
   private currentCID?: string
-  private cache: Cache<TData>
+  private cache: Cache<IPayload<TData>>
   private untypedOn = this.on
   private untypedEmit = this.emit
   public on = <K extends keyof IDatasetEvents<TData>>(
@@ -77,7 +78,7 @@ export class Dataset<TData = any, TNewData = TData>
     node: Node,
     fetcher: Fetcher,
     loader: ILoader,
-    options?: IDatasetOptions<TData>
+    options?: IDatasetOptions<TNewData>
   ) {
     super()
     const {
@@ -102,23 +103,23 @@ export class Dataset<TData = any, TNewData = TData>
     node: Node,
     fetcher: Fetcher<TNewData>,
     loader: ILoader<TData, TNewData>,
-    options?: IDatasetOptions<TData>
+    options?: IDatasetOptions<TNewData>
   ): Dataset<TData, TNewData> {
     return new Dataset(node, fetcher, loader, options)
   }
 
   private update(payload: IPayload<TData>, cid: string) {
     this.currentCID = cid
-    this.cache.set(payload.data)
+    this.cache.set(payload)
     this.lastUpdated = payload.lastUpdated
     this.emit('updated', payload)
-    return payload.data
   }
 
   private async fetchWith(fetcher: Fetcher<TNewData>) {
     const data = await fetcher()
     const { cid, payload } = await this.loader.init(this.node, data)
-    return this.update(payload, cid)
+    this.update(payload, cid)
+    return payload
   }
 
   private isStale() {
@@ -132,15 +133,18 @@ export class Dataset<TData = any, TNewData = TData>
   }
 
   async init() {
-    // download the latest payload after a peer sends a new CID
-    this.node.on('receivedMessage', async (newCID) => {
-      const newPayload = await this.loader.download(this.node, newCID)
-      if (newPayload.lastUpdated > this.lastUpdated) {
-        this.update(newPayload, newCID)
+    // download payloads after a peer sends a new CID
+    this.node.on('receivedMessage', async (receivedCID) => {
+      if (receivedCID === this.currentCID) {
+        return
+      }
+      const receivedPayload = await this.loader.download(this.node, receivedCID)
+      if (receivedPayload.lastUpdated > this.lastUpdated) {
+        this.update(receivedPayload, receivedCID)
       } else {
         const { payload, cid } = await this.loader.loadHistorical(
           this.node,
-          newPayload.data,
+          receivedPayload.data,
           this.currentCID as string
         )
         this.update(payload, cid)
@@ -167,7 +171,7 @@ export class Dataset<TData = any, TNewData = TData>
     this.node.poll(5000)
   }
 
-  get(): Promise<TData> {
+  get() {
     if (!this.lastUpdated) {
       return this.fetchWith(this.initializer)
     }
@@ -184,6 +188,7 @@ export class Dataset<TData = any, TNewData = TData>
       this.currentCID
     )
     await this.node.sendMessage(cid)
-    return this.update(payload, cid)
+    this.update(payload, cid)
+    return payload
   }
 }

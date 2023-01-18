@@ -1,12 +1,6 @@
 import stringify from 'fast-json-stable-stringify'
 import { Node } from './node.js'
-import { Transformer } from './types.js'
-
-export interface IPayload<TData> {
-  data: TData
-  // unix timestamp
-  lastUpdated: number
-}
+import { IPayload, Transformer } from './types.js'
 
 export interface ILoaderOptions<TData = any, TNewData = TData> {
   /**

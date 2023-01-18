@@ -5,7 +5,7 @@ import { htmlSource, scriptTag } from './constants'
 
 const node = new Node('bunny')
 
-async function main() {
+export async function init() {
   const key = 'chat'
   const db = new BunnymenDB()
   const chatDataset = new ChatDataset(node, 50)
@@ -14,13 +14,12 @@ async function main() {
   db.subscribe(key, (messages) => {
     console.log(`${key} updated:`, messages)
   })
-  await db.set(key, ['Hello'])
   return db;
 }
 
-main().then((db) => {
+init().then((db) => {
   console.log(db);
-  // @ts-ignore 
+  // @ts-ignore
   window.bunnymenDB = db;
 });
 

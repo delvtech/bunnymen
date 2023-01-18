@@ -77,7 +77,7 @@ export class BunnymenDB implements IBunnymenDB {
 
     // what happens if a dataset is registered after I've already subscribed?
     if (!datasets) {
-      return false
+      return
     }
 
     for (const dataset of datasets) {
