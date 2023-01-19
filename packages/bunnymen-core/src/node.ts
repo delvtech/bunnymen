@@ -36,6 +36,7 @@ export interface INodeEvents {
 }
 
 export class Node extends EventEmitter {
+  private BASE_TOPIC = '_peer-discovery._p2p._pubsub'
   private _topic: string
   private _node
   private _libp2p
@@ -70,7 +71,7 @@ export class Node extends EventEmitter {
 
   constructor(topic: string) {
     super()
-    this._topic = topic
+    this._topic = topic + "." + this.BASE_TOPIC
     this._peers = new Array(0)
     this._libp2p = (opts: any) => {
       this._opts = opts
@@ -225,17 +226,18 @@ export class Node extends EventEmitter {
         timeout: 10000, // in ms,
         tagName: 'bootstrap',
         tagValue: 50,
-        tagTTL: 120000, // in ms
+        tagTTL: Infinity, // browser's need a constant connection to bootstrap nodes
       }),
-      // TODO: commented out bc it causes an error:
-      // Error: invalid wire type 6 at offset 10
-      // @libp2p/pubsub-peer-discovery/src/peer.ts:76:12)
-      //
-      //   pubsubPeerDiscovery({
-      //     interval: 5000,
-      //     topics: [this._topic],
-      //     listenOnly: false
-      // })
+    // TODO: commented out bc it causes an error: 
+    // Error: invalid wire type 6 at offset 10
+    // @libp2p/pubsub-peer-discovery/src/peer.ts:76:12)
+    
+      pubsubPeerDiscovery({
+        interval: 5000,
+        topics: [this._topic, this.BASE_TOPIC], 
+        listenOnly: false
+    })
+
     ]
     if (isBrowser) {
       const wRTCStar = webRTCStar()
@@ -257,7 +259,6 @@ export class Node extends EventEmitter {
         // libp2p will automatically attempt to dial to the signaling server so that it can
         // receive inbound connections from other peers
         listen: [
-          '/dns4/star.sc2.nl/tcp/443/wss/p2p-webrtc-star',
           '/dns4/wrtc-star1.par.dwebops.pub/tcp/443/wss/p2p-webrtc-star',
           '/dns4/wrtc-star2.sjc.dwebops.pub/tcp/443/wss/p2p-webrtc-star',
           '/ip4/0.0.0.0/tcp/0/ws',
