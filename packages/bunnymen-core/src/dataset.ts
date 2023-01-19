@@ -146,9 +146,6 @@ export class Dataset<TData = any, TNewData = TData>
       )
       if (receivedPayload.lastUpdated > this.lastUpdated) {
         this.update(receivedPayload, receivedCID)
-        // what happens if the timestamps are the same? The nodes would get out
-        // of sync since they would both prioritize their local data. How can we
-        // get them to agree? Through the leader?
       } else {
         const { payload, cid } = await this.loader.loadHistorical(
           this.node,
