@@ -1,3 +1,4 @@
+import { EventEmitter } from 'stream'
 import { IDataset } from './dataset.js'
 import { Transformer } from './types.js'
 
@@ -10,9 +11,26 @@ export interface IBunnymenDB {
   subscribe: (key: string, handler: (data: any) => void) => void
 }
 
-export class BunnymenDB implements IBunnymenDB {
+export interface IBunnymentEvents {
+  /**
+   * Fired when init is complete.
+   */
+  ready: () => void
+}
+
+export class BunnymenDB extends EventEmitter implements IBunnymenDB {
   private datasets: Record<string, IDataset[]> = {}
   private transformers: Record<string | never, Transformer> = {}
+  private untypedOn = this.on
+  private untypedEmit = this.emit
+  public on = <K extends keyof IBunnymentEvents>(
+    event: K,
+    listener: IBunnymentEvents[K],
+  ): this => this.untypedOn(event, listener)
+  public emit = <K extends keyof IBunnymentEvents>(
+    event: K,
+    ...args: Parameters<IBunnymentEvents[K]>
+  ): boolean => this.untypedEmit(event, ...args)
 
   get peers() {
     const flattened = ([] as IDataset[]).concat(...Object.values(this.datasets))
@@ -33,6 +51,7 @@ export class BunnymenDB implements IBunnymenDB {
     const datasetArrays = Object.values(this.datasets)
     const allDatasets = ([] as IDataset[]).concat(...datasetArrays)
     await Promise.all(allDatasets.map((dataset) => dataset.init()))
+    this.emit('ready')
   }
 
   // TODO: how to add strong types to key arg and return value
