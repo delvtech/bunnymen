@@ -10,7 +10,7 @@ async function main() {
 
   const fooLoader = Loader.create(
     (currentCount: number, incrementCount: number) =>
-      currentCount + incrementCount
+      currentCount + incrementCount,
   )
 
   const fooFetcher = () => 1

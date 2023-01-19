@@ -31,7 +31,7 @@ export class ChatDataset extends Dataset<IMessageData[], string[]> {
       // Merge new messages with existing data and keep the last `maxHistory`
       aggregator: (
         messageHistory: IMessageData[] | undefined,
-        newMessages: IMessageData[]
+        newMessages: IMessageData[],
       ) => {
         return (messageHistory || []).concat(newMessages).slice(-maxHistory)
       },

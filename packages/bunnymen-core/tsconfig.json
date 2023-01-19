@@ -16,6 +16,6 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
-    "incremental": true,
+    "incremental": true
   }
 }

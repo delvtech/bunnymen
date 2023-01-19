@@ -189,4 +189,4 @@ window.bunnyNode.on('peerSubscribed', (hash) => {
 <\/script>
 </div>
 </html>
-`;
+`
