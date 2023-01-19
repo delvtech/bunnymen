@@ -4,6 +4,7 @@ import { ChatDataset } from './chatDataset'
 import { htmlSource, scriptTag } from './constants'
 
 const node = new Node('bunny')
+// @ts-ignore
 window.bunnyNode = node
 
 export async function init() {

@@ -1,4 +1,4 @@
-import { EventEmitter } from 'stream'
+import { EventEmitter } from 'events'
 import { IDataset } from './dataset.js'
 import { Transformer } from './types.js'
 
