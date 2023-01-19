@@ -168,10 +168,10 @@ export class Dataset<TData = any, TNewData = TData>
     })
 
     // listen for messages (new CIDs)
-    this.node.subscribe()
+    await this.node.subscribe()
 
     // check for new peers
-    this.node.poll(5000)
+    await this.node.poll(5000)
   }
 
   get() {
