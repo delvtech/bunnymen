@@ -100,19 +100,29 @@ if (is_iframe) {
 
 var term;
 var initialized = false;
+var peers = [];
 let helped = false;
 
 function ready() {
     term = $('#term').terminal(function(cmd, ...args) {        
         this.list = () => {
-            this.echo('[[;rgba(205,205,0,0.99);]Current Sessions...]');
-            for (let i = 0; i < 6; i++) {
-                this.echo('[[;rgba(205,205,0,.99);]connected: bunnyman ' + i + ']')
+            if (peers.length === 0) {
+                this.echo('[[;rgba(205,205,0,.99);]No peers connected]');
+                return;
             }
+
+            var sessionString = '';
+            for (let i = 0; i < peers.length; i++) {
+                sessionString += '\\n[[;rgba(205,205,0,.99);]connected: bunnyman ';
+                sessionString += peers[i];
+            }
+
+            this.echo('Current sessions...\\n'+ sessionString);
+            return;
         }
 
         this.error = (msg) => {
-            this.echo('[[b;red;black);]Error: \' + \'msg]');
+            this.echo('[[b;red;black);]Error: \' + \'msg ' + msg +  \' does not exist. Enter help to get started]');
         }
 
         if (cmd === 'chat' && !initialized) {
@@ -124,7 +134,7 @@ function ready() {
         }
 
         if (cmd === 'help') {
-            this.echo('[[;rgba(0, 100, 100);black]\\n\\nWelcome to Bunnymen.\\n\\nThe website and data on this page are all shared with you by other browser visitors.\\nYou are now sharing this data and also serving up the HTML for this site to other visitors.\\nBunnymen uses your browser to become a node and peer directly with other browsers.\\nWe don\\'t have to use centralized services.\\n\\nA few usecaes:\\n-Decentralized Frontends\\n-Reduced reliance on node providers\\n-User safety and data sovereignty\\n\\nThis is a chat application, your privacy is maintained.\\n\\nYou may now chat...]');
+            this.echo('[[;rgba(0, 100, 100);black]\\n\\nWelcome to Bunnymen.\\n\\nThe website and data on this page are all shared with you by other browser visitors.\\nYou are now sharing this data and also serving up the HTML for this site to other visitors.\\nBunnymen uses your browser to become a node and peer directly with other browsers.\\n\\nWe don\\'t have to use centralized services.\\n\\nA few usecaes:\\n-Decentralized Frontends\\n-Reduced reliance on node providers\\n-User safety and data sovereignty\\n\\nThis is a chat application, your privacy is maintained.\\n\\nYou may now chat...]');
             helped = true;
             return;
         }
@@ -134,7 +144,8 @@ function ready() {
         }
 
         if (helped) {
-            return window.bunnymenDB.set('chat', [cmd]);
+            window.bunnymenDB.set('chat', [cmd]);
+            return;
         }
 
         if (!initialized) {
@@ -142,8 +153,9 @@ function ready() {
         }
     }, {
         onInit() {
-            this.echo('\\n[[;rgba(0, 100, 100);]Bunnymen vBeta0.0.] Welcome Anon\\n');
-            this.echo('\\n[[;rgba(0, 100, 100);black]Press help to get started...]');
+            this.echo('\\n[[b;green;black);]Bunnymen vBeta0.0.] Welcome Anon\\n');
+            this.echo('\\n[[;rgba(0, 100, 100);black]Enter help to get started...]');
+            this.echo('\\n[[;rgba(0, 100, 100);black]Enter ls to list your peers...]');
         },
         greetings: greetings.innerHTML,
         prompt: "[[;rgba(0, 100, 100);black]>>> ]",
@@ -159,15 +171,21 @@ window.bunnymenDB.subscribe('chat', (messages) => {
         currentLength = messages.data.length;
         if (prevLength === 50) {
             const lastMessage = messages.data[49]
-            term.echo(new Date(lastMessage.timestamp).toISOString() + ' ' + lastMessage.user + ': ' + lastMessage.content);
+            term.echo(new Date(lastMessage.timestamp).toISOString() + ' [[b;blue;black);]Node: ' + lastMessage.user + ': ]' + lastMessage.content);
         } else {
             for (let key = prevLength; key <= prevLength; key++) {
-                term.echo(new Date(messages.data[key].timestamp).toISOString() + ' ' + messages.data[key].user + ': ' + messages.data[key].content);
+                term.echo(new Date(messages.data[key].timestamp).toISOString() + ' [[b;blue;black);]Node: ' + messages.data[key].user + ': ]' + messages.data[key].content);
             }    
         }
     }
     prevLength = currentLength;
 });
+
+window.bunnyNode.on('peerSubscribed', (hash) => {
+    peers.push(hash);
+    term.echo('[[b;yellow;black);]Node ' + hash + ' subscribed');
+});
+
 <\/script>
 </div>
 </html>
