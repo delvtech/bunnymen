@@ -18,8 +18,14 @@
         webrtc-star = (pkgs.callPackage ./nix/webrtc-star
           { })."@libp2p/webrtc-star-signalling-server";
 
+        selfPkgs = self.packages.${system};
       in {
         packages = { inherit webrtc-star; };
+
+        apps.webrtc-star = {
+          type = "app";
+          program = "${selfPkgs.webrtc-star}/bin/webrtc-star";
+        };
 
         devShell = mkShell { buildInputs = with pkgs; [ nodejs node2nix ]; };
       });
