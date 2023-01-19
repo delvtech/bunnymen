@@ -29,7 +29,7 @@ export interface IDataset<TData = any, TNewData = TData> extends EventEmitter {
   set: (newData: TNewData) => Promise<IPayload<TData>>
   on: <K extends keyof IDatasetEvents<TData>>(
     event: K,
-    listener: IDatasetEvents<TData>[K]
+    listener: IDatasetEvents<TData>[K],
   ) => this
   emit: <K extends keyof IDatasetEvents<TData>>(
     event: K,
@@ -54,7 +54,7 @@ export class Dataset<TData = any, TNewData = TData>
   private untypedEmit = this.emit
   public on = <K extends keyof IDatasetEvents<TData>>(
     event: K,
-    listener: IDatasetEvents<TData>[K]
+    listener: IDatasetEvents<TData>[K],
   ): this => this.untypedOn(event, listener)
   public emit = <K extends keyof IDatasetEvents<TData>>(
     event: K,
@@ -78,7 +78,7 @@ export class Dataset<TData = any, TNewData = TData>
     node: Node,
     fetcher: Fetcher,
     loader: ILoader,
-    options?: IDatasetOptions<TNewData>
+    options?: IDatasetOptions<TNewData>,
   ) {
     super()
     const {
@@ -103,7 +103,7 @@ export class Dataset<TData = any, TNewData = TData>
     node: Node,
     fetcher: Fetcher<TNewData>,
     loader: ILoader<TData, TNewData>,
-    options?: IDatasetOptions<TNewData>
+    options?: IDatasetOptions<TNewData>,
   ): Dataset<TData, TNewData> {
     return new Dataset(node, fetcher, loader, options)
   }
@@ -141,11 +141,14 @@ export class Dataset<TData = any, TNewData = TData>
       const receivedPayload = await this.loader.download(this.node, receivedCID)
       if (receivedPayload.lastUpdated > this.lastUpdated) {
         this.update(receivedPayload, receivedCID)
+        // what happens if the timestamps are the same? The nodes would get out
+        // of sync since they would both prioritize their local data. How can we
+        // get them to agree? Through the leader?
       } else {
         const { payload, cid } = await this.loader.loadHistorical(
           this.node,
           receivedPayload.data,
-          this.currentCID as string
+          this.currentCID as string,
         )
         this.update(payload, cid)
       }
@@ -158,7 +161,7 @@ export class Dataset<TData = any, TNewData = TData>
         this.node.sendMessage(this.currentCID)
       } else {
         console.log(
-          'DATASET: no data has been uploaded yet so there is no message to send'
+          'DATASET: no data has been uploaded yet so there is no message to send',
         )
       }
       console.log('DATASET: peer subscribed ' + peerId)
@@ -185,7 +188,7 @@ export class Dataset<TData = any, TNewData = TData>
     const { cid, payload } = await this.loader.load(
       this.node,
       newData,
-      this.currentCID
+      this.currentCID,
     )
     await this.node.sendMessage(cid)
     this.update(payload, cid)

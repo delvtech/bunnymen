@@ -19,7 +19,7 @@ export interface ILoader<TData = any, TNewData = TData> {
    */
   init: (
     node: Node,
-    data: TNewData
+    data: TNewData,
   ) => Promise<{
     cid: string
     payload: IPayload<TData>
@@ -27,7 +27,7 @@ export interface ILoader<TData = any, TNewData = TData> {
   load: (
     node: Node,
     newData: TNewData,
-    currentCID?: string
+    currentCID?: string,
   ) => Promise<{
     cid: string
     payload: IPayload<TData>
@@ -35,7 +35,7 @@ export interface ILoader<TData = any, TNewData = TData> {
   loadHistorical: (
     node: Node,
     oldData: TData,
-    currentCID: string
+    currentCID: string,
   ) => Promise<{
     cid: string
     payload: IPayload<TData>
@@ -58,7 +58,7 @@ export class Loader<TData = any, TNewData = TData>
    * Factory method to return a strongly typed instance.
    */
   static create<TData = any, TNewData = any>(
-    options?: ILoaderOptions<TData, TNewData>
+    options?: ILoaderOptions<TData, TNewData>,
   ): Loader<TData, TNewData> {
     return new Loader(options)
   }
@@ -106,7 +106,7 @@ export class Loader<TData = any, TNewData = TData>
     if (!this.aggregator) {
       return {
         cid: currentCID,
-        payload: payload,
+        payload,
       }
     }
     payload.data = await this.aggregator(oldData, payload.data)
