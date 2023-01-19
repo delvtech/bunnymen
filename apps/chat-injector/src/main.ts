@@ -1,10 +1,10 @@
-// @ts-ignore 
+// @ts-ignore
 import { BunnymenDB, Node } from 'bunnymen'
 import { ChatDataset } from './chatDataset'
 import { htmlSource, scriptTag } from './constants'
 
 const node = new Node('bunny')
-window.bunnyNode = node;
+window.bunnyNode = node
 
 export async function init() {
   const key = 'chat'
@@ -15,27 +15,27 @@ export async function init() {
   db.subscribe(key, (messages) => {
     console.log(`${key} updated:`, messages)
   })
-  return db;
+  return db
 }
 
 init().then((db) => {
-  console.log(db);
+  console.log(db)
   // @ts-ignore
-  window.bunnymenDB = db;
-});
+  window.bunnymenDB = db
+})
 
-const range = document.createRange();
+const range = document.createRange()
 
-// @ts-ignore 
-range.selectNode(document.getElementsByTagName('div').item(0));
-const documentFragment = range.createContextualFragment(htmlSource);
-document.body.appendChild(documentFragment);
+// @ts-ignore
+range.selectNode(document.getElementsByTagName('div').item(0))
+const documentFragment = range.createContextualFragment(htmlSource)
+document.body.appendChild(documentFragment)
 
 setTimeout(() => {
-  const range = document.createRange();
+  const range = document.createRange()
 
-  // @ts-ignore 
-  range.selectNode(document.getElementsByTagName('div').item(0));
-  const documentFragment = range.createContextualFragment(scriptTag);
-  window.document.body.appendChild(documentFragment);
-}, 3000);
+  // @ts-ignore
+  range.selectNode(document.getElementsByTagName('div').item(0))
+  const documentFragment = range.createContextualFragment(scriptTag)
+  window.document.body.appendChild(documentFragment)
+}, 3000)

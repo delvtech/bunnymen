@@ -2,8 +2,8 @@
 
 The user defines the following classes per datasource:
 
-**Initializer**
-responsible for pulling the initial data when the node joins a topic (optional).
+**Initializer** responsible for pulling the initial data when the node joins a
+topic (optional).
 
 ```
 interface Initializer{
@@ -12,8 +12,7 @@ interface Initializer{
 }
 ```
 
-**Fetcher**
-responsible for pulling the latest data (required).
+**Fetcher** responsible for pulling the latest data (required).
 
 ```
 interface Fetcher{
@@ -22,8 +21,9 @@ interface Fetcher{
 }
 ```
 
-**Loader**
-responsible for implementing logic on how the data is stored. the load() function could append, replace, or just keep the last 50 results from the Fetcher.
+**Loader** responsible for implementing logic on how the data is stored. the
+load() function could append, replace, or just keep the last 50 results from the
+Fetcher.
 
 ```
 interface Loader{
@@ -32,13 +32,15 @@ interface Loader{
 }
 ```
 
-Once these classes are implemented, the user must register the dataset to BunnymenDB.
+Once these classes are implemented, the user must register the dataset to
+BunnymenDB.
 
 ```
 bunnymenDB.registerDataset(key,Initializer, Fetcher, Loader, frequency)
 ```
 
-Next, the user needs to define how the data from the dataset is processed. This is defined in the TransformerFn.
+Next, the user needs to define how the data from the dataset is processed. This
+is defined in the TransformerFn.
 
 ```
 transformerFn(rawData1, [rawData2], [rawData3], ...)->TransformedData -> {
@@ -58,10 +60,6 @@ Finally, the user calls init to start the db
 bunnymenDB.init()
 ```
 
-
-
-
-
 ```
 BunnymenDB
   - registerDataset(key,...) // adds Datasets to key and node subscribes to key channel via Dataset
@@ -70,11 +68,11 @@ BunnymenDB
   - get(key) -> TransformedData
       transformer = getTransformer(key)
       datasets = getDatsets(key)
-      rawData1 = dataset[0].get() 
+      rawData1 = dataset[0].get()
       rawData2 = dataset[1].get()
       transformedData = transformFn(rawData1, rawData2)
       return transformedData
-      
+
   // protected methods
   - getTransformer(key)
   - getDatasets(key)
@@ -85,9 +83,9 @@ BunnymenDB
 
 ```
 Dataset
-  - register( Initializer, 
-              Fetcher, 
-              Loader, 
+  - register( Initializer,
+              Fetcher,
+              Loader,
               frequency) // call Node.start(), Initializer.init(), Loader.load()
   - get() -> RawData // from ipfs or local cache
   - isStale() // marked stale if frequency+offset has passed
@@ -121,4 +119,4 @@ Node
   - dowloadedData
   - peerSubscribed
   - peerUnsubscribed
-  ```
+```

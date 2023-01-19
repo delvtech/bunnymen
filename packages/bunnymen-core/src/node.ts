@@ -52,7 +52,7 @@ export class Node extends EventEmitter {
 
   public on = <K extends keyof INodeEvents>(
     event: K,
-    listener: INodeEvents[K]
+    listener: INodeEvents[K],
   ): this => this._untypedOn(event, listener)
 
   public emit = <K extends keyof INodeEvents>(
@@ -63,7 +63,7 @@ export class Node extends EventEmitter {
   get peerId() {
     return this._peerId
   }
-  
+
   get peers() {
     return this._peers
   }
@@ -72,13 +72,13 @@ export class Node extends EventEmitter {
     super()
     this._topic = topic
     this._peers = new Array(0)
-    this._libp2p = ((opts: any) => {
+    this._libp2p = (opts: any) => {
       this._opts = opts
       this._peerId = opts.peerId.toString()
       const bootstrapList = opts.config.bootstrap
       return this.configureLibp2p()
-    })
-    
+    }
+
     this._node = IPFS.create({
       repo: path.join(os.tmpdir(), `repo-${nanoid()}`),
       libp2p: this._libp2p,
@@ -104,9 +104,9 @@ export class Node extends EventEmitter {
     const receivedMessage = (message: any) =>
       this.emit(
         'receivedMessage',
-        String.fromCharCode.apply(null, message.data)
+        String.fromCharCode.apply(null, message.data),
       )
-    node.pubsub.subscribe(this._topic,receivedMessage)
+    node.pubsub.subscribe(this._topic, receivedMessage)
     this.emit('subscribed', this._topic)
     this.selectLeader()
   }
@@ -130,7 +130,7 @@ export class Node extends EventEmitter {
       path: this._topic,
       content: new TextEncoder().encode(data),
     })
-    this._currentCid = file.cid.toString()//.toV1().toString()
+    this._currentCid = file.cid.toString() //.toV1().toString()
     this.emit('uploadedData', this._currentCid)
     return this._currentCid
   }
@@ -188,12 +188,12 @@ export class Node extends EventEmitter {
 
     const peersLeft = prevPeers.filter(
       (prevPeer: string) =>
-        prevPeer != this._peerId && !this._peers.includes(prevPeer)
+        prevPeer != this._peerId && !this._peers.includes(prevPeer),
     )
     peersLeft.forEach((peer) => this.emit('peerUnsubscribed', peer.toString()))
 
     const peersJoined = this._peers.filter(
-      (peer: string) => !prevPeers.includes(peer)
+      (peer: string) => !prevPeers.includes(peer),
     )
     peersJoined.forEach((peer) => this.emit('peerSubscribed', peer.toString()))
 
@@ -206,12 +206,12 @@ export class Node extends EventEmitter {
   private configureLibp2p() {
     const transports = [webSockets()]
     const boostraplist = [
-        '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
-        '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',
-        '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmZa1sAxajnQjVM8WjWXoMbmPd7NsWhfKsPkErzpm9wGkp',
-        '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa',
-        '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt',
-      ]
+      '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
+      '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',
+      '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmZa1sAxajnQjVM8WjWXoMbmPd7NsWhfKsPkErzpm9wGkp',
+      '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa',
+      '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt',
+    ]
     //   var newlist = []
     //   for (const add of boostraplist) {
     //       const v0str = add.replace(/.*\//, '');
@@ -227,16 +227,15 @@ export class Node extends EventEmitter {
         tagValue: 50,
         tagTTL: 120000, // in ms
       }),
-    // TODO: commented out bc it causes an error: 
-    // Error: invalid wire type 6 at offset 10
-    // @libp2p/pubsub-peer-discovery/src/peer.ts:76:12)
-    //
-    //   pubsubPeerDiscovery({
-    //     interval: 5000,
-    //     topics: [this._topic], 
-    //     listenOnly: false
-    // })
-
+      // TODO: commented out bc it causes an error:
+      // Error: invalid wire type 6 at offset 10
+      // @libp2p/pubsub-peer-discovery/src/peer.ts:76:12)
+      //
+      //   pubsubPeerDiscovery({
+      //     interval: 5000,
+      //     topics: [this._topic],
+      //     listenOnly: false
+      // })
     ]
     if (isBrowser) {
       const wRTCStar = webRTCStar()
@@ -248,7 +247,7 @@ export class Node extends EventEmitter {
           broadcast: true,
           port: 50002,
           compat: true,
-        })
+        }),
       )
       transports.push(tcp())
     }
@@ -270,7 +269,7 @@ export class Node extends EventEmitter {
       connectionManager: {
         pollInterval: 5000,
         autoDial: true, // auto dial to peers we find when we have less peers than `connectionManager.minConnections`,
-        minConnections: 20
+        minConnections: 20,
       },
       transports,
       connectionEncryption: [noise()],
@@ -287,7 +286,7 @@ export class Node extends EventEmitter {
         enabled: true,
         emitSelf: false,
         allowPublishToZeroPeers: true,
-        floodPublish: true
+        floodPublish: true,
       }),
     })
   }
