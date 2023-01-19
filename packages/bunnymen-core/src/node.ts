@@ -71,7 +71,7 @@ export class Node extends EventEmitter {
 
   constructor(topic: string) {
     super()
-    this._topic = topic + "." + this.BASE_TOPIC
+    this._topic = topic + '.' + this.BASE_TOPIC
     this._peers = new Array(0)
     this._libp2p = (opts: any) => {
       this._opts = opts
@@ -228,16 +228,15 @@ export class Node extends EventEmitter {
         tagValue: 50,
         tagTTL: Infinity, // browser's need a constant connection to bootstrap nodes
       }),
-    // TODO: commented out bc it causes an error: 
-    // Error: invalid wire type 6 at offset 10
-    // @libp2p/pubsub-peer-discovery/src/peer.ts:76:12)
-    
+      // TODO: commented out bc it causes an error:
+      // Error: invalid wire type 6 at offset 10
+      // @libp2p/pubsub-peer-discovery/src/peer.ts:76:12)
+
       pubsubPeerDiscovery({
         interval: 5000,
-        topics: [this._topic, this.BASE_TOPIC], 
-        listenOnly: false
-    })
-
+        topics: [this._topic, this.BASE_TOPIC],
+        listenOnly: false,
+      }),
     ]
     if (isBrowser) {
       const wRTCStar = webRTCStar()
