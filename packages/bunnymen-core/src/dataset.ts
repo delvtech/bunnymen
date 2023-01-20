@@ -135,7 +135,7 @@ export class Dataset<TData = any, TNewData = TData>
   async init() {
     // download payloads after a peer sends a new CID
     this.node.on('receivedMessage', async (receivedCID) => {
-      if (receivedCID === this.currentCID) {
+      if (receivedCID === this.currentCID || receivedCID.length !== 46) {
         return
       }
       const receivedPayload = await this.loader.download(this.node, receivedCID)
