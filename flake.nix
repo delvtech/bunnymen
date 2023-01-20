@@ -32,18 +32,38 @@
           program = "${selfPkgs.webrtc-star}/bin/webrtc-star";
         };
 
-        devShell =
-          mkShell { buildInputs = with pkgs; [ nodejs node2nix yarn docker ]; };
+        devShell = mkShell {
+          buildInputs = with pkgs; [
+            nodejs
+            node2nix
+            yarn
+            docker
+            deploy-rs.defaultPackage.${system}
+          ];
+        };
+
       })) // (let
         system = "x86_64-linux";
         pkgs = import nixpkgs { inherit system; };
         inherit (pkgs) lib;
+        inherit (lib) nixosSystem;
+        inherit (deploy-rs.lib.${system}.activate) nixos;
       in {
-
+        inherit deploy-rs;
         nixosModules = {
           webrtc-star = import ./nix/webrtc-star/module.nix {
             inherit pkgs lib;
             webrtc-star = self.packages.${system}.webrtc-star;
+          };
+        };
+
+        nixosConfigurations = {
+          webrtc-star = nixosSystem {
+            inherit system;
+            modules = [
+              (import ./nix/webrtc-star/configuration.nix)
+              self.nixosModules.webrtc-star
+            ];
           };
         };
 
@@ -53,13 +73,11 @@
           fastConnection = false;
           nodes = {
             webrtc-star = {
-              hostname = "";
+              hostname = "ec2-54-171-121-200.eu-west-1.compute.amazonaws.com";
               user = "root";
               sshUser = "root";
-              profiles = {
-                system.path = deploy-rs.lib.x86_64-linux.activate.nixos
-                  self.nixosConfigurations.Nitrogen;
-              };
+              profiles.system.path = deploy-rs.lib.x86_64-linux.activate.nixos
+                self.nixosConfigurations.webrtc-star;
             };
           };
         };
