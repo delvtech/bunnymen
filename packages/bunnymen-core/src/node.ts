@@ -1,5 +1,5 @@
 import * as IPFS from 'ipfs-core'
-import { createLibp2p, Libp2p } from 'libp2p'
+import { createLibp2p } from 'libp2p'
 import { mdns } from '@libp2p/mdns'
 import { kadDHT } from '@libp2p/kad-dht'
 import { webSockets } from '@libp2p/websockets'
@@ -72,7 +72,6 @@ export class Node extends EventEmitter {
     this._libp2p = (opts: any) => {
       this._opts = opts
       this._peerId = opts.peerId.toString()
-      const bootstrapList = opts.config.bootstrap
       return this.configureLibp2p()
     }
 
@@ -98,11 +97,10 @@ export class Node extends EventEmitter {
 
   async subscribe(): Promise<void> {
     const node: IPFS.IPFS = await this._node
-    const receivedMessage = (message: any) =>
-      this.emit(
-        'receivedMessage',
-        String.fromCharCode.apply(null, message.data),
-      )
+    const receivedMessage = (message: any) => {
+      const data = String.fromCharCode.apply(null, message.data)
+      this.emit('receivedMessage', data)
+    }
     node.pubsub.subscribe(this._topic, receivedMessage)
     this.emit('subscribed', this._topic)
     this.selectLeader()
@@ -136,15 +134,17 @@ export class Node extends EventEmitter {
     const node: IPFS.IPFS = await this._node
     const decoder = new TextDecoder()
     let data = ''
-
-    for await (const chunk of node.cat(cid)) {
-      data += decoder.decode(chunk, {
-        stream: true,
-      })
+    if (cid.length === 46) {
+      for await (const chunk of node.cat(cid)) {
+        data += decoder.decode(chunk, {
+          stream: true,
+        })
+      }
+      this._currentCid = cid
+      this.emit('downloadedData', data)
+    } else {
+      console.log('invalid cid')
     }
-
-    this._currentCid = cid
-    this.emit('downloadedData', data)
     return data
   }
 
@@ -222,7 +222,7 @@ export class Node extends EventEmitter {
       pubsubPeerDiscovery({
         interval: 5000,
         topics: [this._topic, this.BASE_TOPIC],
-        listenOnly: false,
+        listenOnly: true, // enabling listenOnly to eliminate an issue where it tries to intercept bunnymen messages and decode them
       }),
     ]
     if (isBrowser) {
@@ -240,6 +240,7 @@ export class Node extends EventEmitter {
       transports.push(tcp())
     }
     return createLibp2p({
+      peerId: this._opts.peerId,
       addresses: {
         // Add the signaling server address, along with our PeerId to our multiaddrs list
         // libp2p will automatically attempt to dial to the signaling server so that it can
@@ -247,10 +248,13 @@ export class Node extends EventEmitter {
         listen: [
           //'/dns4/wrtc-star1.par.dwebops.pub/tcp/443/wss/p2p-webrtc-star',
           //'/dns4/wrtc-star2.sjc.dwebops.pub/tcp/443/wss/p2p-webrtc-star',
+          '/dns4/bunnymen.delvelabs.xyz/tcp/443/wss/p2p-webrtc-star/',
           '/ip4/0.0.0.0/tcp/0/ws',
           '/ip4/0.0.0.0/tcp/0',
           '/ip4/127.0.0.1/tcp/0/ws',
           '/ip4/127.0.0.1/tcp/0',
+          '/ip4/0.0.0.0/tcp/0/wss',
+          '/ip4/0.0.0.0/tcp/0',
           '/ip4/127.0.0.1/tcp/13579/ws/p2p-webrtc-star/', // local webrtc-star server
         ],
       },
