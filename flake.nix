@@ -7,20 +7,15 @@
     nix-filter.url = "github:numtide/nix-filter";
   };
   outputs = inputs@{ self, nixpkgs, flake-utils, nix-filter, ... }:
-    let
-      inherit (nixpkgs.lib) recursiveUpdate;
-      inherit (flake-utils.lib) eachDefaultSystem defaultSystems;
-    in eachDefaultSystem (system:
+    flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
-        inherit (pkgs) mkShell buildNpmPackage;
+        inherit (pkgs) lib mkShell buildNpmPackage;
 
         webrtc-star = (pkgs.callPackage ./nix/webrtc-star
           { })."@libp2p/webrtc-star-signalling-server";
 
         selfPkgs = self.packages.${system};
-
-        libPath = with pkgs; lib.makeLibraryPath [ stdenv.cc.cc ];
 
       in {
         packages = {
@@ -46,6 +41,12 @@
             docker-client
             arion
           ];
+        };
+
+        nixosModules = {
+          webrtc-star = import ./nix/webrtc-star/module.nix {
+            inherit pkgs webrtc-star lib;
+          };
         };
       });
 }
