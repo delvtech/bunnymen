@@ -1,39 +1,41 @@
-{ config, pkgs, lib, webrtc-star, ... }:
+{ webrtcStarPkg }:
 
-with lib;
+({ config, pkgs, lib, ... }:
 
-let cfg = config.services.webrtc-star;
-in {
-  options.services.webrtc-star = {
-    enable = mkEnableOption "Enable webrtc-star service";
+  with lib;
 
-    package = mkOption {
-      type = types.package;
-      default = webrtc-star;
-      defaultText = "pkgs.webrtc-star";
-      description = "Set version of webrtc-star to use.";
-    };
-  };
+  let cfg = config.services.webrtc-star;
+  in {
+    options.services.webrtc-star = {
+      enable = mkEnableOption "Enable webrtc-star service";
 
-  config = mkIf cfg.enable {
-    environment.systemPackages = [ cfg.package ];
-    services.dbus.packages = [ cfg.package ];
-
-    systemd.services.webrtc-star = {
-      description = "webrtc-star server daemon";
-
-      wantedBy = [ "multi-user.target" ];
-      after = [ "network.target" ]; # if networking is needed
-
-      restartIfChanged = true; # set to false, if restarting is problematic
-
-      serviceConfig = {
-        DynamicUser = true;
-        ExecStart = "${cfg.package}/bin/webrtc-star";
-        Restart = "always";
+      package = mkOption {
+        type = types.package;
+        default = webrtcStarPkg;
+        defaultText = "pkgs.webrtc-star";
+        description = "Set version of webrtc-star to use.";
       };
     };
-  };
 
-  meta.maintainers = with lib.maintainers; [ ];
-}
+    config = mkIf cfg.enable {
+      environment.systemPackages = [ cfg.package ];
+      services.dbus.packages = [ cfg.package ];
+
+      systemd.services.webrtc-star = {
+        description = "webrtc-star server daemon";
+
+        wantedBy = [ "multi-user.target" ];
+        after = [ "network.target" ]; # if networking is needed
+
+        restartIfChanged = true; # set to false, if restarting is problematic
+
+        serviceConfig = {
+          DynamicUser = true;
+          ExecStart = "${cfg.package}/bin/webrtc-star";
+          Restart = "always";
+        };
+      };
+    };
+
+    meta.maintainers = with lib.maintainers; [ ];
+  })

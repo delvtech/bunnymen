@@ -50,7 +50,11 @@
         inherit (deploy-rs.lib.${system}.activate) nixos;
       in {
         inherit deploy-rs;
-        nixosModules = { webrtc-star = import ./nix/webrtc-star/module.nix; };
+        nixosModules = {
+          webrtc-star = (import ./nix/webrtc-star/module.nix {
+            webrtcStarPkg = self.packages.${system}.webrtc-star;
+          });
+        };
 
         nixosConfigurations = {
           webrtc-star = lib.nixosSystem {
