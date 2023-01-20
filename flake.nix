@@ -19,14 +19,33 @@
           { })."@libp2p/webrtc-star-signalling-server";
 
         selfPkgs = self.packages.${system};
+
+        libPath = with pkgs; lib.makeLibraryPath [ stdenv.cc.cc ];
+
       in {
-        packages = { inherit webrtc-star; };
+        packages = {
+          inherit webrtc-star;
+
+          webrtc-star-docker = pkgs.dockerTools.buildImage {
+            name = "webrtc-star-docker";
+            config = { Cmd = [ "${selfPkgs.webrtc-star}/bin/webrtc-star" ]; };
+          };
+        };
 
         apps.webrtc-star = {
           type = "app";
           program = "${selfPkgs.webrtc-star}/bin/webrtc-star";
         };
 
-        devShell = mkShell { buildInputs = with pkgs; [ nodejs node2nix ]; };
+        devShell = mkShell {
+          buildInputs = with pkgs; [
+            nodejs
+            node2nix
+            yarn
+            docker
+            docker-client
+            arion
+          ];
+        };
       });
 }
