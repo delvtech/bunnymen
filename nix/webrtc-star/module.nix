@@ -1,4 +1,4 @@
-{ pkgs, lib, webrtc-star, ... }:
+{ config, pkgs, lib, webrtc-star, ... }:
 
 with lib;
 

@@ -2,11 +2,12 @@
   description = "bunnymen";
 
   inputs = {
+    stable.url = "github:NixOS/nixpkgs/nixos-22.11";
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
     deploy-rs.url = "github:serokell/deploy-rs";
   };
-  outputs = inputs@{ self, nixpkgs, flake-utils, deploy-rs, ... }:
+  outputs = inputs@{ self, stable, nixpkgs, flake-utils, deploy-rs, ... }:
     (flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
@@ -32,7 +33,7 @@
           program = "${selfPkgs.webrtc-star}/bin/webrtc-star";
         };
 
-        devShell = mkShell {
+        devShells.default = mkShell {
           buildInputs = with pkgs; [
             nodejs
             node2nix
@@ -44,21 +45,15 @@
 
       })) // (let
         system = "x86_64-linux";
-        pkgs = import nixpkgs { inherit system; };
-        inherit (pkgs) lib;
-        inherit (lib) nixosSystem;
+        pkgs = import stable { inherit system; };
+        inherit (stable) lib;
         inherit (deploy-rs.lib.${system}.activate) nixos;
       in {
         inherit deploy-rs;
-        nixosModules = {
-          webrtc-star = import ./nix/webrtc-star/module.nix {
-            inherit pkgs lib;
-            webrtc-star = self.packages.${system}.webrtc-star;
-          };
-        };
+        nixosModules = { webrtc-star = import ./nix/webrtc-star/module.nix; };
 
         nixosConfigurations = {
-          webrtc-star = nixosSystem {
+          webrtc-star = lib.nixosSystem {
             inherit system;
             modules = [
               (import ./nix/webrtc-star/configuration.nix)
