@@ -10,16 +10,12 @@ import { mplex } from '@libp2p/mplex'
 import { noise } from '@chainsafe/libp2p-noise'
 import { gossipsub } from '@chainsafe/libp2p-gossipsub'
 import { pubsubPeerDiscovery } from '@libp2p/pubsub-peer-discovery'
-import { CID } from 'multiformats/cid'
-import { PeerId, RSAPeerId } from '@libp2p/interface-peer-id'
-import { Message } from '@libp2p/kad-dht/dist/src/message'
 import { EventEmitter } from 'events'
 import os from 'os'
 import path from 'path'
 import { nanoid } from 'nanoid'
 import { sha3_256 } from '@noble/hashes/sha3'
 import { PeerIdStr } from '@chainsafe/libp2p-gossipsub/dist/src/types'
-import { openStdin } from 'process'
 
 const isBrowser = typeof window !== 'undefined'
 
@@ -131,7 +127,7 @@ export class Node extends EventEmitter {
       path: this._topic,
       content: new TextEncoder().encode(data),
     })
-    this._currentCid = file.cid.toString() //.toV1().toString()
+    this._currentCid = file.cid.toString()
     this.emit('uploadedData', this._currentCid)
     return this._currentCid
   }
@@ -140,7 +136,7 @@ export class Node extends EventEmitter {
     const node: IPFS.IPFS = await this._node
     const decoder = new TextDecoder()
     let data = ''
-    //const cid_v1 = CID.parse(cid).toV1().toString()
+
     for await (const chunk of node.cat(cid)) {
       data += decoder.decode(chunk, {
         stream: true,
@@ -213,13 +209,7 @@ export class Node extends EventEmitter {
       '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa',
       '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt',
     ]
-    //   var newlist = []
-    //   for (const add of boostraplist) {
-    //       const v0str = add.replace(/.*\//, '');
-    //       const v1str = '/dnsaddr/bootstrap.libp2p.io/ws/p2p/' +CID.parse(v0str).toV1().toString()
-    //       console.log(v1str)
-    //       newlist.push(v1str)
-    //   }
+
     const peerDiscovery: any = [
       bootstrap({
         list: boostraplist,
@@ -228,9 +218,6 @@ export class Node extends EventEmitter {
         tagValue: 50,
         tagTTL: Infinity, // browser's need a constant connection to bootstrap nodes
       }),
-      // TODO: commented out bc it causes an error:
-      // Error: invalid wire type 6 at offset 10
-      // @libp2p/pubsub-peer-discovery/src/peer.ts:76:12)
 
       pubsubPeerDiscovery({
         interval: 5000,
