@@ -4,7 +4,9 @@ import { ILoader } from './loader.js'
 import { Node } from './node.js'
 import type { IPayload } from './types.js'
 
-export type Fetcher<TData = any> = () => TData | Promise<TData>
+export type Fetcher<TData = any, TRawData = TData> = (
+  currentData?: TData,
+) => TRawData | Promise<TRawData>
 
 // 'static' = never stale
 export type Frequency = number | 'static'
@@ -14,7 +16,7 @@ export interface IDatasetEvents<TData = any> {
 }
 
 export interface IDatasetOptions<TRawData = any> {
-  initializer?: Fetcher<TRawData>
+  initializer?: Fetcher<undefined, TRawData>
   initialContentId?: string
   /**
    * Number of ms until the data is considered stale. Set to `"static"` to
@@ -45,8 +47,8 @@ export class Dataset<TData = any, TRawData = TData>
 {
   private node: Node
   // keep this around to rerun during validation
-  private initializer: Fetcher<TRawData>
-  private fetcher: Fetcher<TRawData>
+  private initializer: Fetcher<undefined, TRawData>
+  private fetcher: Fetcher<TData, TRawData>
   private loader: ILoader<TData, TRawData>
   private currentCID?: string
   private topic: string = ''
@@ -102,7 +104,7 @@ export class Dataset<TData = any, TRawData = TData>
    */
   static create<TData = any, TRawData = TData>(
     node: Node,
-    fetcher: Fetcher<TRawData>,
+    fetcher: Fetcher<TData, TRawData>,
     loader: ILoader<TData, TRawData>,
     options?: IDatasetOptions<TRawData>,
   ): Dataset<TData, TRawData> {
@@ -116,9 +118,14 @@ export class Dataset<TData = any, TRawData = TData>
     this.emit('updated', payload)
   }
 
-  private async fetchWith(fetcher: Fetcher<TRawData>) {
-    const data = await fetcher()
-    const { cid, payload } = await this.loader.init(this.node, this.topic, data)
+  private async fetchWith(fetcher: Fetcher, currentData?: TData) {
+    const data = await fetcher(currentData)
+    const { cid, payload } = await this.loader.load(
+      this.node,
+      this.topic,
+      data,
+      this.currentCID,
+    )
     this.update(payload, cid)
     return payload
   }
@@ -174,14 +181,15 @@ export class Dataset<TData = any, TRawData = TData>
     await this.node.subscribe(this.topic)
   }
 
-  get() {
+  async get() {
     if (!this.lastUpdated) {
       return this.fetchWith(this.initializer)
     }
+    const cachedPayload = this.cache.get()
     if (this.isStale()) {
-      return this.fetchWith(this.fetcher)
+      return this.fetchWith(this.fetcher, cachedPayload.data)
     }
-    return Promise.resolve(this.cache.get())
+    return cachedPayload
   }
 
   async set(newData: TRawData) {

@@ -14,17 +14,6 @@ export interface ILoaderOptions<TData = any, TRawData = TData> {
 }
 
 export interface ILoader<TData = any, TRawData = TData> {
-  /**
-   * Ignores aggregator and replaces any existing data.
-   */
-  init: (
-    node: Node,
-    topic: string,
-    data: TRawData,
-  ) => Promise<{
-    cid: string
-    payload: IPayload<TData>
-  }>
   load: (
     node: Node,
     topic: string,
@@ -75,19 +64,6 @@ export class Loader<TData = any, TRawData = TData>
       data = this.aggregator(currentData, data as TData)
     }
     return data as TData
-  }
-
-  async init(node: Node, topic: string, data: TRawData) {
-    let transformedData = data as unknown as TData
-    if (this.transformer) {
-      transformedData = this.transformer(data)
-    }
-    const payload = {
-      data: transformedData,
-      lastUpdated: Date.now(),
-    }
-    const cid = await node.upload(topic, stringify(payload))
-    return { cid, payload }
   }
 
   async load(
