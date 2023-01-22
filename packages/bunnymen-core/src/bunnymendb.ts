@@ -73,7 +73,7 @@ export class BunnymenDB extends EventEmitter implements IBunnymenDB {
 
     const transformer = this.transformers[key]
     if (transformer) {
-      return transformer(...rawDatas)
+      return await transformer(...rawDatas)
     }
 
     if (rawDatas.length === 1) {

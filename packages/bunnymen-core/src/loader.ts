@@ -58,10 +58,10 @@ export class Loader<TData = any, TRawData = TData>
   private async prepData(newData: TRawData, currentData?: TData) {
     let data: TData | TRawData = newData
     if (this.transformer) {
-      data = this.transformer(data)
+      data = await this.transformer(data)
     }
     if (this.aggregator) {
-      data = this.aggregator(currentData, data as TData)
+      data = await this.aggregator(currentData, data as TData)
     }
     return data as TData
   }
