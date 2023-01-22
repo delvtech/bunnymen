@@ -105,7 +105,9 @@ export class BunnymenDB extends EventEmitter implements IBunnymenDB {
     }
 
     for (const dataset of datasets) {
-      dataset.on('updated', handler)
+      dataset.on('updated', async () => {
+        handler(await this.get(key))
+      })
     }
   }
 }
