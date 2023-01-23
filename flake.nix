@@ -39,6 +39,7 @@
             node2nix
             yarn
             docker
+            docker-compose
             deploy-rs.defaultPackage.${system}
           ];
         };
@@ -66,6 +67,7 @@
           };
         };
 
+        # ssh root access needed to deploy
         deploy = {
           autoRollback = true;
           remoteBuild = true;
