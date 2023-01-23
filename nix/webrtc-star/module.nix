@@ -15,27 +15,103 @@
         defaultText = "pkgs.webrtc-star";
         description = "Set version of webrtc-star to use.";
       };
-    };
 
-    config = mkIf cfg.enable {
-      environment.systemPackages = [ cfg.package ];
-      services.dbus.packages = [ cfg.package ];
+      port = mkOption {
+        type = types.int;
+        default = 9090;
+        defaultText = "9090";
+        description = "Local port server will run on";
+      };
 
-      systemd.services.webrtc-star = {
-        description = "webrtc-star server daemon";
+      nginx = mkOption {
+        default = { };
+        description = lib.mdDoc ''
+          Configuration for nginx reverse proxy.
+        '';
 
-        wantedBy = [ "multi-user.target" ];
-        after = [ "network.target" ]; # if networking is needed
+        type = types.submodule {
+          options = {
+            enable = mkOption {
+              type = types.bool;
+              default = true;
+              description = lib.mdDoc ''
+                Configure the nginx reverse proxy settings.
+              '';
+            };
 
-        restartIfChanged = true; # set to false, if restarting is problematic
+            enableHttps = mkOption {
+              type = types.bool;
+              default = true;
+              description = lib.mdDoc ''
+                Enables ACME certification on host name
+              '';
+            };
 
-        serviceConfig = {
-          DynamicUser = true;
-          ExecStart = "${cfg.package}/bin/webrtc-star";
-          Restart = "always";
+            hostName = mkOption {
+              type = types.str;
+              description = lib.mdDoc ''
+                The hostname used to setup the virtualhost configuration
+              '';
+            };
+          };
         };
       };
+
     };
 
-    meta.maintainers = with lib.maintainers; [ ];
+    config = mkIf cfg.enable (mkMerge [
+
+      {
+        environment.systemPackages = [ cfg.package ];
+        services.dbus.packages = [ cfg.package ];
+
+        systemd.services.webrtc-star = {
+          description = "webrtc-star server daemon";
+          wantedBy = [ "multi-user.target" ];
+          after = [ "network.target" ]; # if networking is needed
+          restartIfChanged = true; # set to false, if restarting is problematic
+          serviceConfig = {
+            DynamicUser = true;
+            ExecStart =
+              "${cfg.package}/bin/webrtc-star -p ${toString cfg.port}";
+            Restart = "always";
+          };
+        };
+      }
+
+      (mkIf cfg.nginx.enable {
+        services.nginx = {
+          enable = true;
+          recommendedProxySettings = true;
+          virtualHosts."${cfg.nginx.hostName}" = {
+            locations."/" = {
+              proxyPass = "http://127.0.0.1:${toString cfg.port}";
+              proxyWebsockets = true; # needed for upgrade
+              extraConfig = ''
+                proxy_ssl_server_name on;
+                proxy_pass_header Authorization;
+              '';
+            };
+          };
+        };
+      })
+
+      (mkIf cfg.nginx.enableHttps {
+        users.users."nginx".extraGroups = [ "acme" ];
+
+        security.acme.acceptTerms = lib.mkDefault true;
+        security.acme.certs."${cfg.nginx.hostName}" = {
+          webroot = "/var/lib/acme/acme-challenge/";
+          email = "admin@${cfg.nginx.hostName}";
+        };
+
+        services.nginx = {
+          recommendedTlsSettings = true;
+          virtualHosts."${cfg.nginx.hostName}" = {
+            enableACME = lib.mkDefault true;
+            forceSSL = lib.mkDefault true;
+          };
+        };
+      })
+    ]);
   })
