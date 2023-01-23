@@ -1,5 +1,5 @@
 import * as IPFS from 'ipfs-core'
-import { createLibp2p } from 'libp2p'
+import { createLibp2p, Libp2p } from 'libp2p'
 import { mdns } from '@libp2p/mdns'
 import { kadDHT } from '@libp2p/kad-dht'
 import { webSockets } from '@libp2p/websockets'
@@ -16,6 +16,7 @@ import path from 'path'
 import { nanoid } from 'nanoid'
 import { sha3_256 } from '@noble/hashes/sha3'
 import { PeerIdStr } from '@chainsafe/libp2p-gossipsub/dist/src/types'
+import { threadId } from 'worker_threads'
 
 const isBrowser = typeof window !== 'undefined'
 
@@ -97,6 +98,28 @@ export class Node extends EventEmitter {
 
   async subscribe(): Promise<void> {
     const node: IPFS.IPFS = await this._node
+    const libp2p: Libp2p = await this._libp2p(this._opts)
+    libp2p.addEventListener('peer:discovery', (evt: any) => {
+      const peer = evt.detail
+      console.log(`Found peer ${peer.id.toString()}`)
+
+      // dial them when we discover them
+      // libp2p.dial(evt.detail.multiaddrs[0]).catch((err: any) => {
+      //   console.log(`Could not dial ${evt.detail.multiaddrs[0]}`, err)
+      // })
+    })
+
+    // Listen for new connections to peers
+    libp2p.addEventListener('peer:connect', (evt) => {
+      const connection = evt.detail
+      console.log(`Connected to ${connection.remotePeer.toString()}`)
+    })
+    // Listen for peers disconnecting
+    // libp2p.addEventListener('peer:disconnect', (evt) => {
+    //     const connection = evt.detail
+    //     console.log(`Disconnected from ${connection.remotePeer.toString()}`)
+    //   })
+
     const receivedMessage = (message: any) => {
       const data = String.fromCharCode.apply(null, message.data)
       this.emit('receivedMessage', data)
@@ -203,6 +226,12 @@ export class Node extends EventEmitter {
   private configureLibp2p() {
     const transports = [webSockets()]
     const boostraplist = [
+      '/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ',
+      '/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
+      '/dnsaddr/bootstrap.libp2p.io/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',
+      '/dnsaddr/bootstrap.libp2p.io/p2p/QmZa1sAxajnQjVM8WjWXoMbmPd7NsWhfKsPkErzpm9wGkp',
+      '/dnsaddr/bootstrap.libp2p.io/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa',
+      '/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt',
       '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
       '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',
       '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmZa1sAxajnQjVM8WjWXoMbmPd7NsWhfKsPkErzpm9wGkp',
@@ -249,13 +278,13 @@ export class Node extends EventEmitter {
           //'/dns4/wrtc-star1.par.dwebops.pub/tcp/443/wss/p2p-webrtc-star',
           //'/dns4/wrtc-star2.sjc.dwebops.pub/tcp/443/wss/p2p-webrtc-star',
           '/dns4/bunnymen.delvelabs.xyz/tcp/443/wss/p2p-webrtc-star/',
-          '/ip4/0.0.0.0/tcp/0/ws',
-          '/ip4/0.0.0.0/tcp/0',
-          '/ip4/127.0.0.1/tcp/0/ws',
-          '/ip4/127.0.0.1/tcp/0',
-          '/ip4/0.0.0.0/tcp/0/wss',
-          '/ip4/0.0.0.0/tcp/0',
-          '/ip4/127.0.0.1/tcp/13579/ws/p2p-webrtc-star/', // local webrtc-star server
+          '/dns4/bunnymen-nix.delvelabs.xyz/tcp/443/wss/p2p-webrtc-star/',
+          // '/ip4/0.0.0.0/tcp/0/ws',
+          // '/ip4/127.0.0.1/tcp/0/ws',
+          // '/ip4/127.0.0.1/tcp/0',
+          // '/ip4/0.0.0.0/tcp/0/wss',
+          // '/ip4/0.0.0.0/tcp/0',
+          // '/ip4/127.0.0.1/tcp/13579/ws/p2p-webrtc-star/', // local webrtc-star server
         ],
       },
       connectionManager: {
@@ -266,19 +295,19 @@ export class Node extends EventEmitter {
       transports,
       connectionEncryption: [noise()],
       streamMuxers: [mplex()],
+      dht: kadDHT(),
       peerDiscovery,
       relay: {
-        enabled: true,
+        enabled: true, // Allows you to dial and accept relayed connections. Does not make you a relay.
         hop: {
-          enabled: true,
-          active: true,
+          enabled: false, // Allows you to be a relay for other peers
         },
       },
       pubsub: gossipsub({
         enabled: true,
         emitSelf: false,
         allowPublishToZeroPeers: true,
-        floodPublish: true,
+        floodPublish: false,
       }),
     })
   }
