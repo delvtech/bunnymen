@@ -11,6 +11,9 @@ $ nix-shell -p vim --run "vim /etc/nixos/configuration.nix"
 By default [flakes](https://nixos.wiki/wiki/Flakes) are not enabled so add these into the configuration
 
 ```nix
+{
+  ...
+
   # Enables flakes and
   nix = {
     extraOptions = "experimental-features = nix-command flakes";
@@ -31,6 +34,7 @@ By default [flakes](https://nixos.wiki/wiki/Flakes) are not enabled so add these
   networking.firewall.allowedTCPPorts = [ 80 443 ];
 
   system.stateVersion = "22.11";
+}
 ```
 
 Then run:
@@ -59,7 +63,7 @@ Copy and paste the following:
       inherit (nixpkgs) lib;
     in {
       nixosConfigurations = {
-        <NAME_OF_MACHINE> = lib.nixosSystem {
+        <HOST> = lib.nixosSystem {
           inherit system;
           modules = [
             (import ./configuration.nix)
@@ -71,20 +75,26 @@ Copy and paste the following:
 }
 ```
 
-Rename the <NAME_OF_MACHINE> to the machine name or whatever you feel
+Rename the `<HOST>` to the machine name or whatever you feel
 
 4. Enable the webrtc-star service
 
 Add to your `configuration.nix`:
 
 ```nix
+{
+  ...
+
   services.webrtc-star = {
     enable = true;
     nginx.hostName = "<yourdomain.com>";
   };
+}
 ```
 
 Change <yourdomain.com> to your domain and ensure it's DNS records point to the public URL of the machine. HTTPS should automatically work.
+
+See `/nix/webrtc-star/configuration.nix` as an example for a full configuration
 
 5. Validate that the signalling-server is working on the host machine
 
