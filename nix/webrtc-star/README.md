@@ -12,7 +12,7 @@ By default [flakes](https://nixos.wiki/wiki/Flakes) are not enabled so add these
 
 ```nix
 {
-  ...
+  # other config ...
 
   # Enables flakes and
   nix = {
@@ -83,7 +83,7 @@ Add to your `configuration.nix`:
 
 ```nix
 {
-  ...
+  # other config ...
 
   services.webrtc-star = {
     enable = true;
