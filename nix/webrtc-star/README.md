@@ -40,7 +40,7 @@ By default [flakes](https://nixos.wiki/wiki/Flakes) are not enabled so add these
 Then run:
 
 ```bash
-sudo nixos-rebuild
+$ sudo nixos-rebuild
 ```
 
 3. Create a `flake.nix` file in `/etc/nixos/`
