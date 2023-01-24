@@ -3,6 +3,7 @@ services:
 
     star:
         image: libp2p/js-libp2p-webrtc-star
+        container_name: "star"
         environment:
             - VIRTUAL_HOST="star.bunnymen.delvelabs.xyz"
             - LETSENCRYPT_HOST="star.bunnymen.delvelabs.xyz"
@@ -12,6 +13,7 @@ services:
 
     nginx-proxy:
         image: jwilder/nginx-proxy
+        container_name: "nginx-proxy"
         ports:
             - 443:443
             - 80:80
@@ -28,6 +30,7 @@ services:
 
     nginx-proxy-letsencrypt:
         image: jrcs/letsencrypt-nginx-proxy-companion
+        container_name: "nginx-proxy-letsencrypt"
         environment:
             NGINX_PROXY_CONTAINER: "nginx-proxy"
         networks:
