@@ -11,3 +11,7 @@ services:
             - VIRTUAL_PORT="9090"
         networks:
             - "net"
+
+networks:
+  net:
+    external: true
