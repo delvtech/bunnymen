@@ -155,10 +155,6 @@ export class Node extends EventEmitter {
     return data
   }
 
-  getPeers() {
-    return this._peers
-  }
-
   isLeader() {
     return this._currentLeader == this._peerId.toString()
   }
