@@ -4,7 +4,7 @@ services:
 
     star:
         image: libp2p/js-libp2p-webrtc-star
-        name: "star"
+        container_name: "star"
         environment:
             - VIRTUAL_HOST="star.bunnymen.delvelabs.xyz"
             - LETSENCRYPT_HOST="star.bunnymen.delvelabs.xyz"
