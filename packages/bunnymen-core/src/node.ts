@@ -226,6 +226,9 @@ export class Node extends EventEmitter {
   private configureLibp2p() {
     const transports = [webSockets()]
     const boostraplist = [
+      '/ip4/3.250.175.165/tcp/15002/ws/p2p/QmYBaiGTbr5pJ3irzWiWiCT74oHorFJYsH8zDbdo874Svi',
+      '/ip4/3.250.175.165/tcp/15002/wss/p2p/QmYBaiGTbr5pJ3irzWiWiCT74oHorFJYsH8zDbdo874Svi',
+      '/ip4/3.250.175.165/tcp/8000/p2p/QmYBaiGTbr5pJ3irzWiWiCT74oHorFJYsH8zDbdo874Svi',
       '/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ',
       '/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
       '/dnsaddr/bootstrap.libp2p.io/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',
