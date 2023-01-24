@@ -3,7 +3,7 @@ import { Node } from 'bunnymen'
 // initiate node here
 // switch to a simple inline script
 async function main() {
-  const topic = 'tiddies'
+  const topic = 'bunnymen'
   const node = new Node(topic)
 
   //let numPeers = 0
@@ -52,9 +52,9 @@ async function main() {
     console.log('new leader selected: ' + peerId)
   })
 
-  node.subscribe()
+  await node.subscribe()
   node.poll(5000)
-  node.upload(counter.toString())
+  await node.upload(counter.toString())
 }
 
 main()

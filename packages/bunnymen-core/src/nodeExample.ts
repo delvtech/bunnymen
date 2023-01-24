@@ -3,6 +3,7 @@ import { Node } from './node.js'
 export async function main() {
   const topic = 'someTopic'
   const node = new Node(topic)
+  await node.start()
 
   let numPeers = 0
   let counter = 0
@@ -50,9 +51,9 @@ export async function main() {
     console.log('new leader selected: ' + peerId)
   })
 
-  node.subscribe()
+  await node.subscribe()
   node.poll(5000)
-  node.upload(counter.toString())
+  await node.upload(counter.toString())
 }
 
 main()

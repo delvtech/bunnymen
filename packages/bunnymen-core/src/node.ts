@@ -1,5 +1,5 @@
 import * as IPFS from 'ipfs-core'
-import { createLibp2p } from 'libp2p'
+import { createLibp2p, Libp2p, Libp2pOptions } from 'libp2p'
 import { mdns } from '@libp2p/mdns'
 import { kadDHT } from '@libp2p/kad-dht'
 import { webSockets } from '@libp2p/websockets'
@@ -34,8 +34,8 @@ export interface INodeEvents {
 export class Node extends EventEmitter {
   private BASE_TOPIC = '_peer-discovery._p2p._pubsub'
   private _topic: string
-  private _node
-  private _libp2p
+  private _node: IPFS.IPFS | undefined
+  private _libp2p: Libp2pOptions | IPFS.Libp2pFactoryFn | undefined
   private _opts: any
   private _peerId: PeerIdStr = ''
   private _peers: string[]
@@ -69,16 +69,21 @@ export class Node extends EventEmitter {
     super()
     this._topic = topic + '.' + this.BASE_TOPIC
     this._peers = new Array(0)
-    this._libp2p = (opts: any) => {
+  }
+
+  async start() {
+    const libp2p = (opts: any) => {
       this._opts = opts
       this._peerId = opts.peerId.toString()
       return this.configureLibp2p()
     }
 
-    this._node = IPFS.create({
+    this._node = await IPFS.create({
       repo: path.join(os.tmpdir(), `repo-${nanoid()}`),
-      libp2p: this._libp2p,
+      libp2p: libp2p,
     })
+
+    this._libp2p = await libp2p
   }
 
   async poll(frequency: number) {
@@ -96,46 +101,48 @@ export class Node extends EventEmitter {
   }
 
   async subscribe(): Promise<void> {
-    const node: IPFS.IPFS = await this._node
     const receivedMessage = (message: any) => {
       const data = String.fromCharCode.apply(null, message.data)
       this.emit('receivedMessage', data)
     }
-    node.pubsub.subscribe(this._topic, receivedMessage)
+    this._node?.pubsub.subscribe(this._topic, receivedMessage)
     this.emit('subscribed', this._topic)
     this.selectLeader()
   }
 
   async unsubscribe() {
-    const node: IPFS.IPFS = await this._node
-    node.pubsub.unsubscribe(this._topic)
+    this._node?.pubsub.unsubscribe(this._topic)
     this.emit('unsubscribed', this._topic)
   }
 
   async sendMessage(message: string) {
-    const node: IPFS.IPFS = await this._node
-    node.pubsub.publish(this._topic, new TextEncoder().encode(message))
+    this._node?.pubsub.publish(this._topic, new TextEncoder().encode(message))
     this.emit('sentMessage', message)
     return message
   }
 
   async upload(data: string) {
-    const node: IPFS.IPFS = await this._node
-    const file = await node.add({
+    const file = await this._node?.add({
       path: this._topic,
       content: new TextEncoder().encode(data),
     })
-    this._currentCid = file.cid.toString()
-    this.emit('uploadedData', this._currentCid)
+
+    if (file !== undefined) {
+      this._currentCid = file.cid.toString()
+      this.emit('uploadedData', this._currentCid)
+    }
     return this._currentCid
   }
 
   async download(cid: string) {
-    const node: IPFS.IPFS = await this._node
     const decoder = new TextDecoder()
     let data = ''
+    if (this._node === undefined) {
+      console.log('IPFS has not been initialized.')
+      return data
+    }
     if (cid.length === 46) {
-      for await (const chunk of node.cat(cid)) {
+      for await (const chunk of this._node.cat(cid)) {
         data += decoder.decode(chunk, {
           stream: true,
         })
@@ -179,9 +186,12 @@ export class Node extends EventEmitter {
   }
 
   private async checkForNewPeers() {
-    const node: IPFS.IPFS = await this._node
     const prevPeers: string[] = this._peers
-    this._peers = (await node.pubsub.peers(this._topic)).map(String)
+    if (this._node === undefined) {
+      console.log('IPFS has not been initialized.')
+      return
+    }
+    this._peers = (await this._node.pubsub.peers(this._topic)).map(String)
 
     const peersLeft = prevPeers.filter(
       (prevPeer: string) =>

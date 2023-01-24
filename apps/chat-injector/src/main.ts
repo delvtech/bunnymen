@@ -9,6 +9,7 @@ window.bunnyNode = node
 
 export async function init() {
   const key = 'chat'
+  await node.start()
   const db = new BunnymenDB()
   const chatDataset = new ChatDataset(node, 50)
   db.registerDatasets(key, chatDataset)
