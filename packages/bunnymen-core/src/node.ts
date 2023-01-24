@@ -16,6 +16,7 @@ import path from 'path'
 import { nanoid } from 'nanoid'
 import { sha3_256 } from '@noble/hashes/sha3'
 import { PeerIdStr } from '@chainsafe/libp2p-gossipsub/dist/src/types'
+import { Channel } from './channel.js'
 
 const isBrowser = typeof window !== 'undefined'
 
@@ -33,17 +34,11 @@ export interface INodeEvents {
 
 export class Node extends EventEmitter {
   private BASE_TOPIC = '_peer-discovery._p2p._pubsub'
-  private _topic: string
   private _ipfs: IPFS.IPFS | undefined
   private _libp2p: Libp2pOptions | IPFS.Libp2pFactoryFn | undefined
   private _opts: any
+  private _topicToChannel: Map<string, Channel> = new Map<string, Channel>()
   private _peerId: PeerIdStr = ''
-  private _peers: string[]
-  private _currentLeader: string = ''
-  private _currentCid: string = ''
-  private _currentStep: number = 0
-  private _frequency = -1
-  private POLLING_FREQENCY: number = 100
   private _untypedOn = this.on
   private _untypedEmit = this.emit
 
@@ -61,14 +56,16 @@ export class Node extends EventEmitter {
     return this._peerId
   }
 
-  get peers() {
-    return this._peers
+  getPeers(topic: string) {
+    return this._topicToChannel.get(topic)?.peers
   }
 
-  constructor(topic: string) {
+  isLeader(topic: string) {
+    return this._topicToChannel.get(topic)?.isLeader()
+  }
+
+  constructor() {
     super()
-    this._topic = topic + '.' + this.BASE_TOPIC
-    this._peers = new Array(0)
   }
 
   async start() {
@@ -86,123 +83,39 @@ export class Node extends EventEmitter {
     this._libp2p = await libp2p
   }
 
-  async poll(frequency: number) {
-    this._frequency = frequency
-    setInterval(async () => {
-      if (this._peerId != undefined) {
-        this.checkForNewPeers()
-        if (this._currentStep >= frequency) {
-          this.selectLeader()
-          this._currentStep = 0
-        }
-        this._currentStep += this.POLLING_FREQENCY
-      }
-    }, this.POLLING_FREQENCY)
+  async subscribe(topic: string, frequency: number = 100): Promise<void> {
+    const channel: Channel = new Channel(this._libp2p, this._ipfs, topic)
+    this.registerEvents(channel)
+    channel.poll(frequency)
+    this._topicToChannel.set(topic, channel)
+    this.emit('subscribed', topic)
   }
 
-  async subscribe(): Promise<void> {
-    const receivedMessage = (message: any) => {
-      const data = String.fromCharCode.apply(null, message.data)
-      this.emit('receivedMessage', data)
-    }
-    this._ipfs?.pubsub.subscribe(this._topic, receivedMessage)
-    this.emit('subscribed', this._topic)
-    this.selectLeader()
+  async unsubscribe(topic: string) {
+    this._topicToChannel.delete(topic)
+    this.emit('unsubscribed', topic)
   }
 
-  async unsubscribe() {
-    this._ipfs?.pubsub.unsubscribe(this._topic)
-    this.emit('unsubscribed', this._topic)
+  async sendMessage(topic: string, message: string) {
+    return this._topicToChannel.get(topic)?.sendMessage(message)
   }
 
-  async sendMessage(message: string) {
-    this._ipfs?.pubsub.publish(this._topic, new TextEncoder().encode(message))
-    this.emit('sentMessage', message)
-    return message
+  async upload(topic: string, data: string) {
+    return this._topicToChannel.get(topic)?.upload(data)
   }
 
-  async upload(data: string) {
-    const file = await this._ipfs?.add({
-      path: this._topic,
-      content: new TextEncoder().encode(data),
-    })
-
-    if (file !== undefined) {
-      this._currentCid = file.cid.toString()
-      this.emit('uploadedData', this._currentCid)
-    }
-    return this._currentCid
+  async download(topic: string, cid: string) {
+    return this._topicToChannel.get(topic)?.download(cid)
   }
 
-  async download(cid: string) {
-    const decoder = new TextDecoder()
-    let data = ''
-    if (this._ipfs === undefined) {
-      console.log('IPFS has not been initialized.')
-      return data
-    }
-    if (cid.length === 46) {
-      for await (const chunk of this._ipfs.cat(cid)) {
-        data += decoder.decode(chunk, {
-          stream: true,
-        })
-      }
-      this._currentCid = cid
-      this.emit('downloadedData', data)
-    } else {
-      console.log('invalid cid')
-    }
-    return data
-  }
-
-  isLeader() {
-    return this._currentLeader == this._peerId.toString()
-  }
-
-  private selectLeader() {
-    var peers = this._peers
-    // add local peerId to peer list
-    peers.push(this._peerId)
-    // create a list of objects { peerId, hash }
-    // where we hash each peer with the currentCid
-    const peerHashList = peers.map((peer) => {
-      var preimage = peer + this._currentCid
-      return { peerId: peer, hash: String.fromCharCode(...sha3_256(preimage)) }
-    })
-    // sort the list alphanumerically
-    const peerHashListSorted = peerHashList.sort((a, b) => {
-      return a.hash.localeCompare(b.hash, undefined, {
-        numeric: true,
-        sensitivity: 'base',
-      })
-    })
-    // select the first peerId in the list as the new leader
-    this._currentLeader = peerHashListSorted[0].peerId
-    this.emit('selectedLeader', this._currentLeader)
-  }
-
-  private async checkForNewPeers() {
-    const prevPeers: string[] = this._peers
-    if (this._ipfs === undefined) {
-      console.log('IPFS has not been initialized.')
-      return
-    }
-    this._peers = (await this._ipfs.pubsub.peers(this._topic)).map(String)
-
-    const peersLeft = prevPeers.filter(
-      (prevPeer: string) =>
-        prevPeer != this._peerId && !this._peers.includes(prevPeer),
+  private registerEvents(channel: Channel) {
+    channel.on('peerSubscribed', (data) => this.emit('peerSubscribed', data))
+    channel.on('peerUnsubscribed', (data) =>
+      this.emit('peerUnsubscribed', data),
     )
-    peersLeft.forEach((peer) => this.emit('peerUnsubscribed', peer.toString()))
-
-    const peersJoined = this._peers.filter(
-      (peer: string) => !prevPeers.includes(peer),
-    )
-    peersJoined.forEach((peer) => this.emit('peerSubscribed', peer.toString()))
-
-    if (peersJoined.length > 0) {
-      this._currentStep = this._frequency
-    }
+    channel.on('selectedLeader', (data) => this.emit('selectedLeader', data))
+    channel.on('sentMessage', (data) => this.emit('sentMessage', data))
+    channel.on('receivedMessage', (data) => this.emit('receivedMessage', data))
   }
 
   // see https://github.com/libp2p/js-libp2p/blob/master/doc/CONFIGURATION.md
@@ -228,7 +141,7 @@ export class Node extends EventEmitter {
 
       pubsubPeerDiscovery({
         interval: 5000,
-        topics: [this._topic, this.BASE_TOPIC],
+        topics: [this.BASE_TOPIC],
         listenOnly: true, // enabling listenOnly to eliminate an issue where it tries to intercept bunnymen messages and decode them
       }),
     ]
