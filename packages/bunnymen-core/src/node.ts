@@ -99,9 +99,9 @@ export class Node extends EventEmitter {
   async subscribe(): Promise<void> {
     const node: IPFS.IPFS = await this._node
     const libp2p: Libp2p = await this._libp2p(this._opts)
-    libp2p.addEventListener('peer:discovery', (evt: any) => {
+    libp2p.addEventListener('peer:discovery', (evt) => {
       const peer = evt.detail
-      console.log(`Found peer ${peer.id.toString()}`)
+      console.log(`Found peer ${peer.multiaddrs.toString()}`)
 
       // dial them when we discover them
       // libp2p.dial(evt.detail.multiaddrs[0]).catch((err: any) => {
@@ -232,11 +232,16 @@ export class Node extends EventEmitter {
       '/dnsaddr/bootstrap.libp2p.io/p2p/QmZa1sAxajnQjVM8WjWXoMbmPd7NsWhfKsPkErzpm9wGkp',
       '/dnsaddr/bootstrap.libp2p.io/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa',
       '/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt',
-      '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
-      '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',
-      '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmZa1sAxajnQjVM8WjWXoMbmPd7NsWhfKsPkErzpm9wGkp',
-      '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa',
-      '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt',
+      '/dnsaddr/bootstrap.libp2p.io/wss/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
+      '/dnsaddr/bootstrap.libp2p.io/wss/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',
+      '/dnsaddr/bootstrap.libp2p.io/wss/p2p/QmZa1sAxajnQjVM8WjWXoMbmPd7NsWhfKsPkErzpm9wGkp',
+      '/dnsaddr/bootstrap.libp2p.io/wss/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa',
+      '/dnsaddr/bootstrap.libp2p.io/wss/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt',
+      // '/ip4/3.250.175.165/tcp/15002/wss/p2p/QmYBaiGTbr5pJ3irzWiWiCT74oHorFJYsH8zDbdo874Svi',
+      // '/ip4/3.250.175.165/tcp/15002/ws/p2p/QmYBaiGTbr5pJ3irzWiWiCT74oHorFJYsH8zDbdo874Svi',
+      // '/ip4/3.250.175.165/tcp/8000/p2p/QmYBaiGTbr5pJ3irzWiWiCT74oHorFJYsH8zDbdo874Svi',
+      // '/dns4/bunnymen.delvelabs.xyz/tcp/15002/ws/p2p/QmYBaiGTbr5pJ3irzWiWiCT74oHorFJYsH8zDbdo874Svi',
+      // '/dns4/bunnymen.delvelabs.xyz/tcp/15002/wss/p2p/QmYBaiGTbr5pJ3irzWiWiCT74oHorFJYsH8zDbdo874Svi'
     ]
 
     const peerDiscovery: any = [
