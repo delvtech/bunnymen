@@ -34,7 +34,7 @@ export interface INodeEvents {
 export class Node extends EventEmitter {
   private BASE_TOPIC = '_peer-discovery._p2p._pubsub'
   private _topic: string
-  private _node: IPFS.IPFS | undefined
+  private _ipfs: IPFS.IPFS | undefined
   private _libp2p: Libp2pOptions | IPFS.Libp2pFactoryFn | undefined
   private _opts: any
   private _peerId: PeerIdStr = ''
@@ -78,7 +78,7 @@ export class Node extends EventEmitter {
       return this.configureLibp2p()
     }
 
-    this._node = await IPFS.create({
+    this._ipfs = await IPFS.create({
       repo: path.join(os.tmpdir(), `repo-${nanoid()}`),
       libp2p: libp2p,
     })
@@ -105,24 +105,24 @@ export class Node extends EventEmitter {
       const data = String.fromCharCode.apply(null, message.data)
       this.emit('receivedMessage', data)
     }
-    this._node?.pubsub.subscribe(this._topic, receivedMessage)
+    this._ipfs?.pubsub.subscribe(this._topic, receivedMessage)
     this.emit('subscribed', this._topic)
     this.selectLeader()
   }
 
   async unsubscribe() {
-    this._node?.pubsub.unsubscribe(this._topic)
+    this._ipfs?.pubsub.unsubscribe(this._topic)
     this.emit('unsubscribed', this._topic)
   }
 
   async sendMessage(message: string) {
-    this._node?.pubsub.publish(this._topic, new TextEncoder().encode(message))
+    this._ipfs?.pubsub.publish(this._topic, new TextEncoder().encode(message))
     this.emit('sentMessage', message)
     return message
   }
 
   async upload(data: string) {
-    const file = await this._node?.add({
+    const file = await this._ipfs?.add({
       path: this._topic,
       content: new TextEncoder().encode(data),
     })
@@ -137,12 +137,12 @@ export class Node extends EventEmitter {
   async download(cid: string) {
     const decoder = new TextDecoder()
     let data = ''
-    if (this._node === undefined) {
+    if (this._ipfs === undefined) {
       console.log('IPFS has not been initialized.')
       return data
     }
     if (cid.length === 46) {
-      for await (const chunk of this._node.cat(cid)) {
+      for await (const chunk of this._ipfs.cat(cid)) {
         data += decoder.decode(chunk, {
           stream: true,
         })
@@ -187,11 +187,11 @@ export class Node extends EventEmitter {
 
   private async checkForNewPeers() {
     const prevPeers: string[] = this._peers
-    if (this._node === undefined) {
+    if (this._ipfs === undefined) {
       console.log('IPFS has not been initialized.')
       return
     }
-    this._peers = (await this._node.pubsub.peers(this._topic)).map(String)
+    this._peers = (await this._ipfs.pubsub.peers(this._topic)).map(String)
 
     const peersLeft = prevPeers.filter(
       (prevPeer: string) =>
