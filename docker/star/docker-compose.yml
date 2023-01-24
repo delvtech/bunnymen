@@ -3,11 +3,9 @@ version: "3.7"
 services:
 
     star:
-        image: libp2p/js-libp2p-webrtc-star
+        image: "libp2p/js-libp2p-webrtc-star"
         container_name: "star"
         environment:
             - VIRTUAL_HOST="star.bunnymen.delvelabs.xyz"
             - LETSENCRYPT_HOST="star.bunnymen.delvelabs.xyz"
-            - VIRTUAL_PORT=9090
-        networks:
-            net:
+            - VIRTUAL_PORT="9090"
