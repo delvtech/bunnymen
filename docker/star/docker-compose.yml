@@ -9,6 +9,8 @@ services:
             - VIRTUAL_HOST="star.bunnymen.delvelabs.xyz"
             - LETSENCRYPT_HOST="star.bunnymen.delvelabs.xyz"
             - VIRTUAL_PORT="9090"
+        expose:
+          - "9090"
         networks:
             - "net"
 
