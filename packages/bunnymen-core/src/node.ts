@@ -57,7 +57,7 @@ export class Node extends EventEmitter {
   }
 
   getPeers(topic: string) {
-    return this._topicToChannel.get(topic)?.peers
+    return new Array(0).concat(this._topicToChannel.get(topic)?.peers)
   }
 
   isLeader(topic: string) {
