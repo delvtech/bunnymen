@@ -129,6 +129,6 @@ export class Loader<TData = any, TNewData = TData>
 
   async download(node: Node, topic: string, cid: string) {
     const json = await node.download(topic, cid)
-    return JSON.parse(''.concat(json))
+    return JSON.parse(json)
   }
 }

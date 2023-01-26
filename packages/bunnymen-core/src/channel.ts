@@ -4,8 +4,6 @@ import { EventEmitter } from 'events'
 import { sha3_256 } from '@noble/hashes/sha3'
 import { PeerIdStr } from '@chainsafe/libp2p-gossipsub/dist/src/types'
 
-const isBrowser = typeof window !== 'undefined'
-
 export interface IChannelEvents {
   peerSubscribed: (property: string) => void
   peerUnsubscribed: (property: string) => void
