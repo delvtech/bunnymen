@@ -14,7 +14,6 @@ import { EventEmitter } from 'events'
 import os from 'os'
 import path from 'path'
 import { nanoid } from 'nanoid'
-import { sha3_256 } from '@noble/hashes/sha3'
 import { PeerIdStr } from '@chainsafe/libp2p-gossipsub/dist/src/types'
 import { Channel } from './channel.js'
 
@@ -52,16 +51,16 @@ export class Node extends EventEmitter {
     ...args: Parameters<INodeEvents[K]>
   ): boolean => this._untypedEmit(event, ...args)
 
-  get peerId() {
+  get peerId(): string {
     return this._peerId
   }
 
-  getPeers(topic: string) {
-    return new Array(0).concat(this._topicToChannel.get(topic)?.peers)
+  getPeers(topic: string): string[] {
+    return this.getChannnel(topic).peers
   }
 
-  isLeader(topic: string) {
-    return this._topicToChannel.get(topic)?.isLeader()
+  isLeader(topic: string): boolean {
+    return this.getChannnel(topic).isLeader()
   }
 
   constructor() {
@@ -96,20 +95,30 @@ export class Node extends EventEmitter {
     this.emit('unsubscribed', topic)
   }
 
-  async sendMessage(topic: string, message: string) {
-    return this._topicToChannel.get(topic)?.sendMessage(message)
+  async sendMessage(topic: string, message: string): Promise<string> {
+    return this.getChannnel(topic).sendMessage(message)
   }
 
-  async upload(topic: string, data: string) {
-    return this._topicToChannel.get(topic)?.upload(data)
+  async upload(topic: string, data: string): Promise<string> {
+    return this.getChannnel(topic).upload(data)
   }
 
-  async download(topic: string, cid: string) {
-    return this._topicToChannel.get(topic)?.download(cid)
+  async download(topic: string, cid: string): Promise<string> {
+    return this.getChannnel(topic).download(cid)
+  }
+
+  private getChannnel(topic: string) {
+    const channel = this._topicToChannel.get(topic)
+    if (channel) {
+      return channel
+    }
+    throw new Error("Topic doesn't exist!")
   }
 
   private registerEvents(channel: Channel) {
-    channel.on('peerSubscribed', (data) => this.emit('peerSubscribed', data))
+    channel.on('peerSubscribed', (data: any) =>
+      this.emit('peerSubscribed', data),
+    )
     channel.on('peerUnsubscribed', (data) =>
       this.emit('peerUnsubscribed', data),
     )

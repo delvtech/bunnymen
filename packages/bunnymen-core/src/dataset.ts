@@ -119,9 +119,7 @@ export class Dataset<TData = any, TNewData = TData>
   private async fetchWith(fetcher: Fetcher<TNewData>) {
     const data = await fetcher()
     const { cid, payload } = await this.loader.init(this.node, this.topic, data)
-    if (!!cid) {
-      this.update(payload, cid)
-    }
+    this.update(payload, cid)
     return payload
   }
 
@@ -158,9 +156,7 @@ export class Dataset<TData = any, TNewData = TData>
           receivedPayload.data,
           this.currentCID as string,
         )
-        if (!!cid) {
-          this.update(payload, cid)
-        }
+        this.update(payload, cid)
       }
     })
 
@@ -198,10 +194,8 @@ export class Dataset<TData = any, TNewData = TData>
       newData,
       this.currentCID,
     )
-    if (!!cid) {
-      await this.node.sendMessage(this.topic, cid)
-      this.update(payload, cid)
-    }
+    await this.node.sendMessage(this.topic, cid)
+    this.update(payload, cid)
     return payload
   }
 }

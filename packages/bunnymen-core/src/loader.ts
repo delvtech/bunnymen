@@ -22,7 +22,7 @@ export interface ILoader<TData = any, TNewData = TData> {
     topic: string,
     data: TNewData,
   ) => Promise<{
-    cid: string | undefined
+    cid: string
     payload: IPayload<TData>
   }>
   load: (
@@ -31,7 +31,7 @@ export interface ILoader<TData = any, TNewData = TData> {
     newData: TNewData,
     currentCID?: string,
   ) => Promise<{
-    cid: string | undefined
+    cid: string
     payload: IPayload<TData>
   }>
   loadHistorical: (
@@ -40,7 +40,7 @@ export interface ILoader<TData = any, TNewData = TData> {
     oldData: TData,
     currentCID: string,
   ) => Promise<{
-    cid: string | undefined
+    cid: string
     payload: IPayload<TData>
   }>
   download: (node: Node, topic: string, cid: string) => Promise<IPayload<TData>>
@@ -129,9 +129,6 @@ export class Loader<TData = any, TNewData = TData>
 
   async download(node: Node, topic: string, cid: string) {
     const json = await node.download(topic, cid)
-    if (json == undefined) {
-      return undefined
-    }
     return JSON.parse(''.concat(json))
   }
 }
