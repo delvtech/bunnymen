@@ -76,12 +76,12 @@ export class Channel extends EventEmitter {
       const data = String.fromCharCode.apply(null, message.data)
       this.emit('receivedMessage', data)
     }
-    this._ipfs?.pubsub.subscribe(this._topic, receivedMessage)
+    await this._ipfs?.pubsub.subscribe(this._topic, receivedMessage)
     this.selectLeader()
   }
 
   async unsubscribe() {
-    this._ipfs?.pubsub.unsubscribe(this._topic)
+    await this._ipfs?.pubsub.unsubscribe(this._topic)
   }
 
   async sendMessage(message: string) {

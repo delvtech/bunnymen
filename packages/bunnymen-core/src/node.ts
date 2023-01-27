@@ -84,6 +84,7 @@ export class Node extends EventEmitter {
 
   async subscribe(topic: string, frequency: number = 100): Promise<void> {
     const channel: Channel = new Channel(this._libp2p, this._ipfs, topic)
+    channel.subscribe()
     this.registerEvents(channel)
     channel.poll(frequency)
     this._topicToChannel.set(topic, channel)
@@ -131,12 +132,12 @@ export class Node extends EventEmitter {
   private configureLibp2p() {
     const transports = [webSockets()]
     const boostraplist = [
-      // '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
-      // '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',
-      // '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmZa1sAxajnQjVM8WjWXoMbmPd7NsWhfKsPkErzpm9wGkp',
-      // '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa',
-      // '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt',
-      '/dns4/relay.bunnymen.delvelabs.xyz/tcp/15002/wss/p2p/QmYBaiGTbr5pJ3irzWiWiCT74oHorFJYsH8zDbdo874Svi',
+      '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
+      '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',
+      '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmZa1sAxajnQjVM8WjWXoMbmPd7NsWhfKsPkErzpm9wGkp',
+      '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa',
+      '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt',
+      //'/dns4/relay.bunnymen.delvelabs.xyz/tcp/15002/wss/p2p/QmYBaiGTbr5pJ3irzWiWiCT74oHorFJYsH8zDbdo874Svi',
     ]
 
     const peerDiscovery: any = [
@@ -151,7 +152,7 @@ export class Node extends EventEmitter {
       pubsubPeerDiscovery({
         interval: 5000,
         topics: [this.BASE_TOPIC],
-        listenOnly: true, // enabling listenOnly to eliminate an issue where it tries to intercept bunnymen messages and decode them
+        listenOnly: false, // enabling listenOnly to eliminate an issue where it tries to intercept bunnymen messages and decode them
       }),
     ]
     if (isBrowser) {
@@ -177,14 +178,14 @@ export class Node extends EventEmitter {
         listen: [
           //'/dns4/wrtc-star1.par.dwebops.pub/tcp/443/wss/p2p-webrtc-star',
           //'/dns4/wrtc-star2.sjc.dwebops.pub/tcp/443/wss/p2p-webrtc-star',
-          '/dns4/star.bunnymen.delvelabs.xyz/tcp/443/wss/p2p-webrtc-star/',
+          //'/dns4/star.bunnymen.delvelabs.xyz/tcp/443/wss/p2p-webrtc-star/',
           //'/dns4/bunnymen-nix.delvelabs.xyz/tcp/443/wss/p2p-webrtc-star/',
-          '/ip4/0.0.0.0/tcp/0/ws',
-          '/ip4/0.0.0.0/tcp/0',
-          '/ip4/127.0.0.1/tcp/0/ws',
-          '/ip4/127.0.0.1/tcp/0',
-          '/ip4/0.0.0.0/tcp/0/wss',
-          '/ip4/0.0.0.0/tcp/0',
+          // '/ip4/0.0.0.0/tcp/0/ws',
+          // '/ip4/0.0.0.0/tcp/0',
+          // '/ip4/127.0.0.1/tcp/0/ws',
+          // '/ip4/127.0.0.1/tcp/0',
+          // '/ip4/0.0.0.0/tcp/0/wss',
+          // '/ip4/0.0.0.0/tcp/0',
           '/ip4/127.0.0.1/tcp/13579/ws/p2p-webrtc-star/', // local webrtc-star server
         ],
       },
@@ -208,7 +209,7 @@ export class Node extends EventEmitter {
         enabled: true,
         emitSelf: false,
         allowPublishToZeroPeers: true,
-        floodPublish: true,
+        floodPublish: false,
       }),
     })
   }
