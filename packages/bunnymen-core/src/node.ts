@@ -15,7 +15,7 @@ import os from 'os'
 import path from 'path'
 import { nanoid } from 'nanoid'
 import { PeerIdStr } from '@chainsafe/libp2p-gossipsub/dist/src/types'
-import { Channel } from './channel.js'
+import { Channel } from './channel'
 
 const isBrowser = typeof window !== 'undefined'
 
