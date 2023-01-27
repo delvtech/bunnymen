@@ -3,7 +3,7 @@ import { BunnymenDB, Node } from 'bunnymen'
 import { ChatDataset } from './chatDataset'
 import { htmlSource, scriptTag } from './constants'
 
-const node = new Node('bunny')
+const node = new Node()
 // @ts-ignore
 window.bunnyNode = node
 
