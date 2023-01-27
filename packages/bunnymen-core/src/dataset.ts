@@ -49,6 +49,7 @@ export class Dataset<TData = any, TNewData = TData>
   private fetcher: Fetcher<TNewData>
   private loader: ILoader<TData, TNewData>
   private currentCID?: string
+  private topic: string = ''
   private cache: Cache<IPayload<TData>>
   private untypedOn = this.on
   private untypedEmit = this.emit
@@ -65,7 +66,7 @@ export class Dataset<TData = any, TNewData = TData>
     return this.node.peerId
   }
   get peers() {
-    return this.node.peers
+    return this.node.getPeers(this.topic)
   }
 
   // ms
@@ -117,7 +118,7 @@ export class Dataset<TData = any, TNewData = TData>
 
   private async fetchWith(fetcher: Fetcher<TNewData>) {
     const data = await fetcher()
-    const { cid, payload } = await this.loader.init(this.node, data)
+    const { cid, payload } = await this.loader.init(this.node, this.topic, data)
     this.update(payload, cid)
     return payload
   }
@@ -138,7 +139,11 @@ export class Dataset<TData = any, TNewData = TData>
       if (receivedCID === this.currentCID || receivedCID.length !== 46) {
         return
       }
-      const receivedPayload = await this.loader.download(this.node, receivedCID)
+      const receivedPayload = await this.loader.download(
+        this.node,
+        this.topic,
+        receivedCID,
+      )
       if (receivedPayload.lastUpdated > this.lastUpdated) {
         this.update(receivedPayload, receivedCID)
         // what happens if the timestamps are the same? The nodes would get out
@@ -147,6 +152,7 @@ export class Dataset<TData = any, TNewData = TData>
       } else {
         const { payload, cid } = await this.loader.loadHistorical(
           this.node,
+          this.topic,
           receivedPayload.data,
           this.currentCID as string,
         )
@@ -156,9 +162,9 @@ export class Dataset<TData = any, TNewData = TData>
 
     this.node.on('peerSubscribed', (peerId) => {
       // only if there is a cid to send
-      if (!!this.currentCID && this.node.isLeader()) {
+      if (!!this.currentCID && this.node.isLeader(this.topic)) {
         // send latest cid when we see that a node has joined the channel
-        this.node.sendMessage(this.currentCID)
+        this.node.sendMessage(this.topic, this.currentCID)
       } else {
         console.log(
           'DATASET: no data has been uploaded yet so there is no message to send',
@@ -168,10 +174,7 @@ export class Dataset<TData = any, TNewData = TData>
     })
 
     // listen for messages (new CIDs)
-    await this.node.subscribe()
-
-    // check for new peers
-    await this.node.poll(5000)
+    await this.node.subscribe(this.topic)
   }
 
   get() {
@@ -187,10 +190,11 @@ export class Dataset<TData = any, TNewData = TData>
   async set(newData: TNewData) {
     const { cid, payload } = await this.loader.load(
       this.node,
+      this.topic,
       newData,
       this.currentCID,
     )
-    await this.node.sendMessage(cid)
+    await this.node.sendMessage(this.topic, cid)
     this.update(payload, cid)
     return payload
   }

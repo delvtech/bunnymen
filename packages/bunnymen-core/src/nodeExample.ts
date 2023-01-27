@@ -2,7 +2,8 @@ import { Node } from './node.js'
 
 export async function main() {
   const topic = 'someTopic'
-  const node = new Node(topic)
+  const node = new Node()
+  await node.start()
 
   let numPeers = 0
   let counter = 0
@@ -12,9 +13,9 @@ export async function main() {
   node.on('unsubscribed', (peerId) => console.log('unsubscribed ' + peerId))
   node.on('peerSubscribed', (peerId) => {
     // only if there is a cid to send
-    if (cid.length > 0 && node.isLeader()) {
+    if (cid.length > 0 && node.isLeader(topic)) {
       // send latest cid when we see that a node has joined the channel
-      node.sendMessage(cid)
+      node.sendMessage(topic, cid)
     } else {
       console.log(
         'no data has been uploaded yet so there is no message to send',
@@ -31,28 +32,27 @@ export async function main() {
   node.on('receivedMessage', (message) => {
     cid = message
     //console.log('recieved message: ' + message)
-    node.download(cid)
+    node.download(topic, cid)
   })
   node.on('uploadedData', (newCid) => {
     console.log('uploaded data: ' + newCid)
     cid = newCid
-    node.sendMessage(newCid)
+    node.sendMessage(topic, newCid)
   })
   node.on('downloadedData', (data) => {
     if (+data >= counter) {
       counter = +data
       console.log('downloaded data: ' + data)
       counter++
-      node.upload(counter.toString())
+      node.upload(topic, counter.toString())
     }
   })
   node.on('selectedLeader', (peerId) => {
     console.log('new leader selected: ' + peerId)
   })
 
-  node.subscribe()
-  node.poll(5000)
-  node.upload(counter.toString())
+  await node.subscribe(topic)
+  await node.upload(topic, counter.toString())
 }
 
 main()

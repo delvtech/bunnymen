@@ -3,12 +3,13 @@ import { BunnymenDB, Node } from 'bunnymen'
 import { ChatDataset } from './chatDataset'
 import { htmlSource, scriptTag } from './constants'
 
-const node = new Node('bunny')
+const node = new Node()
 // @ts-ignore
 window.bunnyNode = node
 
 export async function init() {
   const key = 'chat'
+  await node.start()
   const db = new BunnymenDB()
   const chatDataset = new ChatDataset(node, 50)
   db.registerDatasets(key, chatDataset)

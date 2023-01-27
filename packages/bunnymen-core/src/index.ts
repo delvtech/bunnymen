@@ -1,4 +1,5 @@
 export * from './bunnymendb'
+export * from './channel'
 export * from './dataset'
 export * from './loader'
 export * from './node'
