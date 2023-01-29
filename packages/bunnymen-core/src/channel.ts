@@ -27,12 +27,12 @@ export class Channel extends EventEmitter {
   private _untypedOn = this.on
   private _untypedEmit = this.emit
 
-  public on = <K extends keyof IChannelEvents>(
+  public override on = <K extends keyof IChannelEvents>(
     event: K,
     listener: IChannelEvents[K],
   ): this => this._untypedOn(event, listener)
 
-  public emit = <K extends keyof IChannelEvents>(
+  public override emit = <K extends keyof IChannelEvents>(
     event: K,
     ...args: Parameters<IChannelEvents[K]>
   ): boolean => this._untypedEmit(event, ...args)
@@ -144,7 +144,7 @@ export class Channel extends EventEmitter {
       })
     })
     // select the first peerId in the list as the new leader
-    this._currentLeader = peerHashListSorted[0].peerId
+    this._currentLeader = peerHashListSorted[0]!.peerId
     this.emit('selectedLeader', this._currentLeader)
   }
 

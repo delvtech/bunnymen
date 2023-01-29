@@ -1,21 +1,14 @@
 {
-  "extends": "tsconfig/base.json",
+  "extends": "@tsconfig/node16-strictest-esm/tsconfig.json",
   "include": ["src/**/*"],
   "exclude": ["node_modules"],
   "compilerOptions": {
+    "lib": ["DOM", "ESNext"],
     "baseUrl": ".",
-    "paths": {
-      "src/*": ["src/*"]
-    },
     "outDir": "dist",
-    "resolveJsonModule": true,
-
-    "module": "es2020", // ensures output is ESM
-    "target": "es2020", // support modern features like private identifiers
-    "removeComments": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "allowSyntheticDefaultImports": true,
-    "incremental": true
+    "importsNotUsedAsValues": "remove",
+    "exactOptionalPropertyTypes": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
   }
 }

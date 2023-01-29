@@ -14,8 +14,8 @@ import { EventEmitter } from 'events'
 import os from 'os'
 import path from 'path'
 import { nanoid } from 'nanoid'
-import { PeerIdStr } from '@chainsafe/libp2p-gossipsub/dist/src/types'
-import { Channel } from './channel'
+import type { PeerIdStr } from '@chainsafe/libp2p-gossipsub/dist/src/types'
+import { Channel } from './channel.js'
 
 const isBrowser = typeof window !== 'undefined'
 
@@ -41,12 +41,12 @@ export class Node extends EventEmitter {
   private _untypedOn = this.on
   private _untypedEmit = this.emit
 
-  public on = <K extends keyof INodeEvents>(
+  public override on = <K extends keyof INodeEvents>(
     event: K,
     listener: INodeEvents[K],
   ): this => this._untypedOn(event, listener)
 
-  public emit = <K extends keyof INodeEvents>(
+  public override emit = <K extends keyof INodeEvents>(
     event: K,
     ...args: Parameters<INodeEvents[K]>
   ): boolean => this._untypedEmit(event, ...args)

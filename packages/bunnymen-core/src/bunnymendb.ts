@@ -23,11 +23,11 @@ export class BunnymenDB extends EventEmitter implements IBunnymenDB {
   private transformers: Record<string | never, Transformer> = {}
   private untypedOn = this.on
   private untypedEmit = this.emit
-  public on = <K extends keyof IBunnymentEvents>(
+  public override on = <K extends keyof IBunnymentEvents>(
     event: K,
     listener: IBunnymentEvents[K],
   ): this => this.untypedOn(event, listener)
-  public emit = <K extends keyof IBunnymentEvents>(
+  public override emit = <K extends keyof IBunnymentEvents>(
     event: K,
     ...args: Parameters<IBunnymentEvents[K]>
   ): boolean => this.untypedEmit(event, ...args)
@@ -85,9 +85,10 @@ export class BunnymenDB extends EventEmitter implements IBunnymenDB {
    */
   async set(key: string, data: any) {
     const datasets = this.datasets[key]
-
-    for (const dataset of datasets) {
-      await dataset.set(data)
+    if (datasets) {
+      for (const dataset of datasets) {
+        await dataset.set(data)
+      }
     }
   }
 
