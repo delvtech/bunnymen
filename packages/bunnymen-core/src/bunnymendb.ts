@@ -42,7 +42,7 @@ export class BunnymenDB extends EventEmitter implements IBunnymenDB {
   }
 
   registerDatasets(key: string, ...datasets: IDataset[]) {
-    this.datasets[key] = [...(this.datasets[key] || []), ...datasets]
+    this.datasets[key] = datasets
     return true
   }
 
@@ -73,7 +73,7 @@ export class BunnymenDB extends EventEmitter implements IBunnymenDB {
 
     const transformer = this.transformers[key]
     if (transformer) {
-      return transformer(...rawDatas)
+      return await transformer(...rawDatas)
     }
 
     if (rawDatas.length === 1) {
@@ -105,7 +105,9 @@ export class BunnymenDB extends EventEmitter implements IBunnymenDB {
     }
 
     for (const dataset of datasets) {
-      dataset.on('updated', handler)
+      dataset.on('updated', async () => {
+        handler(await this.get(key))
+      })
     }
   }
 }

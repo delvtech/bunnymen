@@ -4,7 +4,11 @@ import { ILoader } from './loader.js'
 import { Node } from './node.js'
 import type { IPayload } from './types.js'
 
-export type Fetcher<TData = any> = () => TData | Promise<TData>
+export type Fetcher<TData = any, TRawData = TData> = (
+  currentData?: TData,
+) => TRawData | Promise<TRawData>
+
+export type Validator = (receivedData: any) => boolean | Promise<boolean>
 
 // 'static' = never stale
 export type Frequency = number | 'static'
@@ -14,13 +18,17 @@ export interface IDatasetEvents<TData = any> {
 }
 
 export interface IDatasetOptions<TRawData = any> {
-  initializer?: Fetcher<TRawData>
+  initializer?: Fetcher<undefined, TRawData>
   initialContentId?: string
   /**
    * Number of ms until the data is considered stale. Set to `"static"` to
    * prevent the data from ever going stale.
    */
   frequency?: Frequency
+  /**
+   * Used to decide if data from a peer is valid and should be accepted.
+   */
+  validator?: Validator
 }
 
 export interface IDataset<TData = any, TRawData = TData> extends EventEmitter {
@@ -45,8 +53,9 @@ export class Dataset<TData = any, TRawData = TData>
 {
   private node: Node
   // keep this around to rerun during validation
-  private initializer: Fetcher<TRawData>
-  private fetcher: Fetcher<TRawData>
+  private initializer: Fetcher<undefined, TRawData>
+  private fetcher: Fetcher<TData, TRawData>
+  private validator: Validator
   private loader: ILoader<TData, TRawData>
   private currentCID?: string
   private topic: string = ''
@@ -86,11 +95,13 @@ export class Dataset<TData = any, TRawData = TData>
       initializer,
       initialContentId,
       frequency = 'static',
+      validator = () => true,
     } = options || {}
 
     this.node = node
     this.initializer = initializer ?? fetcher
     this.fetcher = fetcher
+    this.validator = validator
     this.loader = loader
     this.currentCID = initialContentId
     this.cache = new Cache()
@@ -102,7 +113,7 @@ export class Dataset<TData = any, TRawData = TData>
    */
   static create<TData = any, TRawData = TData>(
     node: Node,
-    fetcher: Fetcher<TRawData>,
+    fetcher: Fetcher<TData, TRawData>,
     loader: ILoader<TData, TRawData>,
     options?: IDatasetOptions<TRawData>,
   ): Dataset<TData, TRawData> {
@@ -116,9 +127,14 @@ export class Dataset<TData = any, TRawData = TData>
     this.emit('updated', payload)
   }
 
-  private async fetchWith(fetcher: Fetcher<TRawData>) {
-    const data = await fetcher()
-    const { cid, payload } = await this.loader.init(this.node, this.topic, data)
+  private async fetchWith(fetcher: Fetcher, currentData?: TData) {
+    const data = await fetcher(currentData)
+    const { cid, payload } = await this.loader.load(
+      this.node,
+      this.topic,
+      data,
+      this.currentCID,
+    )
     this.update(payload, cid)
     return payload
   }
@@ -133,6 +149,17 @@ export class Dataset<TData = any, TRawData = TData>
     return Date.now() - this.lastUpdated >= this.frequency
   }
 
+  /**
+   * Does the following:
+   * - Subscribe to the node
+   * - Listen for new peers and send them the current payload if this node is
+   *   the leader
+   * - listen for new payloads and update the current one if the received one is
+   *   newer
+   * - If the received payload is older than the current one, then try to merge
+   *   its data with the current data. If this results in a new payload,
+   *   propagate to peers.
+   */
   async init() {
     // download payloads after a peer sends a new CID
     this.node.on('receivedMessage', async (receivedCID) => {
@@ -144,6 +171,10 @@ export class Dataset<TData = any, TRawData = TData>
         this.topic,
         receivedCID,
       )
+      const isValid = await this.validator(receivedPayload.data)
+      if (!isValid) {
+        return
+      }
       if (receivedPayload.lastUpdated > this.lastUpdated) {
         this.update(receivedPayload, receivedCID)
       } else {
@@ -174,14 +205,18 @@ export class Dataset<TData = any, TRawData = TData>
     await this.node.subscribe(this.topic)
   }
 
-  get() {
-    if (!this.lastUpdated) {
+  async get() {
+    if (!this.currentCID) {
       return this.fetchWith(this.initializer)
     }
-    if (this.isStale()) {
-      return this.fetchWith(this.fetcher)
+    const cachedPayload = this.cache.get()
+    if (!cachedPayload) {
+      return this.loader.download(this.node, this.topic, this.currentCID)
     }
-    return Promise.resolve(this.cache.get())
+    if (this.isStale()) {
+      return this.fetchWith(this.fetcher, cachedPayload?.data)
+    }
+    return cachedPayload
   }
 
   async set(newData: TRawData) {
@@ -191,7 +226,6 @@ export class Dataset<TData = any, TRawData = TData>
       newData,
       this.currentCID,
     )
-    await this.node.sendMessage(this.topic, cid)
     this.update(payload, cid)
     return payload
   }

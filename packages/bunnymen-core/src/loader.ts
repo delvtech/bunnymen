@@ -15,16 +15,8 @@ export interface ILoaderOptions<TData = any, TRawData = TData> {
 
 export interface ILoader<TData = any, TRawData = TData> {
   /**
-   * Ignores aggregator and replaces any existing data.
+   * Get a payload from raw data and propagate to peers
    */
-  init: (
-    node: Node,
-    topic: string,
-    data: TRawData,
-  ) => Promise<{
-    cid: string
-    payload: IPayload<TData>
-  }>
   load: (
     node: Node,
     topic: string,
@@ -34,6 +26,11 @@ export interface ILoader<TData = any, TRawData = TData> {
     cid: string
     payload: IPayload<TData>
   }>
+
+  /**
+   * Get a payload from merging old transformed data with the current payload
+   * and propagate to peers if the merging results in a new payload.
+   */
   loadHistorical: (
     node: Node,
     topic: string,
@@ -43,6 +40,9 @@ export interface ILoader<TData = any, TRawData = TData> {
     cid: string
     payload: IPayload<TData>
   }>
+  /**
+   * Get a payload from a CID
+   */
   download: (node: Node, topic: string, cid: string) => Promise<IPayload<TData>>
 }
 
@@ -69,25 +69,19 @@ export class Loader<TData = any, TRawData = TData>
   private async prepData(newData: TRawData, currentData?: TData) {
     let data: TData | TRawData = newData
     if (this.transformer) {
-      data = this.transformer(data)
+      data = await this.transformer(data)
     }
     if (this.aggregator) {
-      data = this.aggregator(currentData, data as TData)
+      data = await this.aggregator(currentData, data as TData)
     }
     return data as TData
   }
 
-  async init(node: Node, topic: string, data: TRawData) {
-    let transformedData = data as unknown as TData
-    if (this.transformer) {
-      transformedData = this.transformer(data)
-    }
-    const payload = {
-      data: transformedData,
-      lastUpdated: Date.now(),
-    }
-    const cid = await node.upload(topic, stringify(payload))
-    return { cid, payload }
+  private async upload(node: Node, topic: string, payload: IPayload<TData>) {
+    const json = stringify(payload)
+    const cid = await node.upload(topic, json)
+    node.sendMessage(topic, cid)
+    return cid
   }
 
   async load(
@@ -105,7 +99,7 @@ export class Loader<TData = any, TRawData = TData>
       data: await this.prepData(rawData, currentData),
       lastUpdated: Date.now(),
     }
-    const cid = await node.upload(topic, stringify(payload))
+    const cid = await this.upload(node, topic, payload)
     return { cid, payload }
   }
 
@@ -115,16 +109,22 @@ export class Loader<TData = any, TRawData = TData>
     oldData: TData,
     currentCID: string,
   ) {
-    let payload = await this.download(node, topic, currentCID)
+    const currentPayload = await this.download(node, topic, currentCID)
     if (!this.aggregator) {
       return {
         cid: currentCID,
-        payload,
+        payload: currentPayload,
       }
     }
-    payload.data = await this.aggregator(oldData, payload.data)
-    const cid = await node.upload(topic, stringify(payload))
-    return { cid, payload }
+    const newPayload = {
+      data: await this.aggregator(oldData, currentPayload.data),
+      lastUpdated: Date.now(),
+    }
+    const cid = await this.upload(node, topic, newPayload)
+    return {
+      cid,
+      payload: newPayload,
+    }
   }
 
   async download(node: Node, topic: string, cid: string) {
