@@ -8,6 +8,10 @@ export type Fetcher<TData = any, TRawData = TData> = (
   currentData?: TData,
 ) => TRawData | Promise<TRawData>
 
+export type Validator<TData = any> = (
+  receivedData: TData,
+) => boolean | Promise<boolean>
+
 // 'static' = never stale
 export type Frequency = number | 'static'
 
@@ -15,7 +19,7 @@ export interface IDatasetEvents<TData = any> {
   updated: (payload: IPayload<TData>) => void
 }
 
-export interface IDatasetOptions<TRawData = any> {
+export interface IDatasetOptions<TData = any, TRawData = TData> {
   initializer?: Fetcher<undefined, TRawData>
   initialContentId?: string
   /**
@@ -23,6 +27,10 @@ export interface IDatasetOptions<TRawData = any> {
    * prevent the data from ever going stale.
    */
   frequency?: Frequency
+  /**
+   * Used to decide if data from a peer is valid and should be accepted.
+   */
+  validator?: Validator<TData>
 }
 
 export interface IDataset<TData = any, TRawData = TData> extends EventEmitter {
@@ -49,6 +57,7 @@ export class Dataset<TData = any, TRawData = TData>
   // keep this around to rerun during validation
   private initializer: Fetcher<undefined, TRawData>
   private fetcher: Fetcher<TData, TRawData>
+  private validator: Validator<TData>
   private loader: ILoader<TData, TRawData>
   private currentCID?: string
   private topic: string = ''
@@ -81,18 +90,20 @@ export class Dataset<TData = any, TRawData = TData>
     node: Node,
     fetcher: Fetcher,
     loader: ILoader,
-    options?: IDatasetOptions<TRawData>,
+    options?: IDatasetOptions<TData, TRawData>,
   ) {
     super()
     const {
       initializer,
       initialContentId,
       frequency = 'static',
+      validator = () => true,
     } = options || {}
 
     this.node = node
     this.initializer = initializer ?? fetcher
     this.fetcher = fetcher
+    this.validator = validator
     this.loader = loader
     this.currentCID = initialContentId
     this.cache = new Cache()
@@ -106,7 +117,7 @@ export class Dataset<TData = any, TRawData = TData>
     node: Node,
     fetcher: Fetcher<TData, TRawData>,
     loader: ILoader<TData, TRawData>,
-    options?: IDatasetOptions<TRawData>,
+    options?: IDatasetOptions<TData, TRawData>,
   ): Dataset<TData, TRawData> {
     return new Dataset(node, fetcher, loader, options)
   }
@@ -162,6 +173,10 @@ export class Dataset<TData = any, TRawData = TData>
         this.topic,
         receivedCID,
       )
+      const isValid = await this.validator(receivedPayload.data)
+      if (!isValid) {
+        return
+      }
       if (receivedPayload.lastUpdated > this.lastUpdated) {
         this.update(receivedPayload, receivedCID)
       } else {
