@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events'
+import { Cache } from './cache'
 import { ILoader } from './loader.js'
 import { Node } from './node.js'
-import { Cache } from './cache'
 import type { IPayload } from './types.js'
 
 export type Fetcher<TData = any> = () => TData | Promise<TData>
@@ -13,8 +13,8 @@ export interface IDatasetEvents<TData = any> {
   updated: (payload: IPayload<TData>) => void
 }
 
-export interface IDatasetOptions<TNewData = any> {
-  initializer?: Fetcher<TNewData>
+export interface IDatasetOptions<TRawData = any> {
+  initializer?: Fetcher<TRawData>
   initialContentId?: string
   /**
    * Number of ms until the data is considered stale. Set to `"static"` to
@@ -23,10 +23,10 @@ export interface IDatasetOptions<TNewData = any> {
   frequency?: Frequency
 }
 
-export interface IDataset<TData = any, TNewData = TData> extends EventEmitter {
+export interface IDataset<TData = any, TRawData = TData> extends EventEmitter {
   init: () => Promise<void>
   get: () => Promise<IPayload<TData>>
-  set: (newData: TNewData) => Promise<IPayload<TData>>
+  set: (newData: TRawData) => Promise<IPayload<TData>>
   on: <K extends keyof IDatasetEvents<TData>>(
     event: K,
     listener: IDatasetEvents<TData>[K],
@@ -39,25 +39,25 @@ export interface IDataset<TData = any, TNewData = TData> extends EventEmitter {
   get peers(): string[]
 }
 
-export class Dataset<TData = any, TNewData = TData>
+export class Dataset<TData = any, TRawData = TData>
   extends EventEmitter
-  implements IDataset<TData, TNewData>
+  implements IDataset<TData, TRawData>
 {
   private node: Node
   // keep this around to rerun during validation
-  private initializer: Fetcher<TNewData>
-  private fetcher: Fetcher<TNewData>
-  private loader: ILoader<TData, TNewData>
+  private initializer: Fetcher<TRawData>
+  private fetcher: Fetcher<TRawData>
+  private loader: ILoader<TData, TRawData>
   private currentCID?: string
   private topic: string = ''
   private cache: Cache<IPayload<TData>>
   private untypedOn = this.on
   private untypedEmit = this.emit
-  public on = <K extends keyof IDatasetEvents<TData>>(
+  public override on = <K extends keyof IDatasetEvents<TData>>(
     event: K,
     listener: IDatasetEvents<TData>[K],
   ): this => this.untypedOn(event, listener)
-  public emit = <K extends keyof IDatasetEvents<TData>>(
+  public override emit = <K extends keyof IDatasetEvents<TData>>(
     event: K,
     ...args: Parameters<IDatasetEvents<TData>[K]>
   ): boolean => this.untypedEmit(event, ...args)
@@ -79,7 +79,7 @@ export class Dataset<TData = any, TNewData = TData>
     node: Node,
     fetcher: Fetcher,
     loader: ILoader,
-    options?: IDatasetOptions<TNewData>,
+    options?: IDatasetOptions<TRawData>,
   ) {
     super()
     const {
@@ -100,12 +100,12 @@ export class Dataset<TData = any, TNewData = TData>
   /**
    * Factory method to return a strongly typed instance.
    */
-  static create<TData = any, TNewData = TData>(
+  static create<TData = any, TRawData = TData>(
     node: Node,
-    fetcher: Fetcher<TNewData>,
-    loader: ILoader<TData, TNewData>,
-    options?: IDatasetOptions<TNewData>,
-  ): Dataset<TData, TNewData> {
+    fetcher: Fetcher<TRawData>,
+    loader: ILoader<TData, TRawData>,
+    options?: IDatasetOptions<TRawData>,
+  ): Dataset<TData, TRawData> {
     return new Dataset(node, fetcher, loader, options)
   }
 
@@ -116,7 +116,7 @@ export class Dataset<TData = any, TNewData = TData>
     this.emit('updated', payload)
   }
 
-  private async fetchWith(fetcher: Fetcher<TNewData>) {
+  private async fetchWith(fetcher: Fetcher<TRawData>) {
     const data = await fetcher()
     const { cid, payload } = await this.loader.init(this.node, this.topic, data)
     this.update(payload, cid)
@@ -146,9 +146,6 @@ export class Dataset<TData = any, TNewData = TData>
       )
       if (receivedPayload.lastUpdated > this.lastUpdated) {
         this.update(receivedPayload, receivedCID)
-        // what happens if the timestamps are the same? The nodes would get out
-        // of sync since they would both prioritize their local data. How can we
-        // get them to agree? Through the leader?
       } else {
         const { payload, cid } = await this.loader.loadHistorical(
           this.node,
@@ -187,7 +184,7 @@ export class Dataset<TData = any, TNewData = TData>
     return Promise.resolve(this.cache.get())
   }
 
-  async set(newData: TNewData) {
+  async set(newData: TRawData) {
     const { cid, payload } = await this.loader.load(
       this.node,
       this.topic,

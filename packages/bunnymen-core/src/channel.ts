@@ -1,8 +1,8 @@
+import { PeerIdStr } from '@chainsafe/libp2p-gossipsub/dist/src/types'
+import { sha3_256 } from '@noble/hashes/sha3'
+import { EventEmitter } from 'events'
 import * as IPFS from 'ipfs-core'
 import { Libp2pOptions } from 'libp2p'
-import { EventEmitter } from 'events'
-import { sha3_256 } from '@noble/hashes/sha3'
-import { PeerIdStr } from '@chainsafe/libp2p-gossipsub/dist/src/types'
 
 export interface IChannelEvents {
   peerSubscribed: (property: string) => void
