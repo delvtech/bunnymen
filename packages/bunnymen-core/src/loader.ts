@@ -14,6 +14,9 @@ export interface ILoaderOptions<TData = any, TRawData = TData> {
 }
 
 export interface ILoader<TData = any, TRawData = TData> {
+  /**
+   * Get a payload from raw data and propagate to peers
+   */
   load: (
     node: Node,
     topic: string,
@@ -23,6 +26,11 @@ export interface ILoader<TData = any, TRawData = TData> {
     cid: string
     payload: IPayload<TData>
   }>
+
+  /**
+   * Get a payload from merging old transformed data with the current payload
+   * and propagate to peers if the merging results in a new payload.
+   */
   loadHistorical: (
     node: Node,
     topic: string,
@@ -32,6 +40,9 @@ export interface ILoader<TData = any, TRawData = TData> {
     cid: string
     payload: IPayload<TData>
   }>
+  /**
+   * Get a payload from a CID
+   */
   download: (node: Node, topic: string, cid: string) => Promise<IPayload<TData>>
 }
 

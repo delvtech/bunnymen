@@ -140,6 +140,17 @@ export class Dataset<TData = any, TRawData = TData>
     return Date.now() - this.lastUpdated >= this.frequency
   }
 
+  /**
+   * Does the following:
+   * - Subscribe to the node
+   * - Listen for new peers and send them the current payload if this node is
+   *   the leader
+   * - listen for new payloads and update the current one if the received one is
+   *   newer
+   * - If the received payload is older than the current one, then try to merge
+   *   its data with the current data. If this results in a new payload,
+   *   propagate to peers.
+   */
   async init() {
     // download payloads after a peer sends a new CID
     this.node.on('receivedMessage', async (receivedCID) => {
