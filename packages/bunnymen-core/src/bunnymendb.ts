@@ -37,6 +37,10 @@ export class BunnymenDB extends EventEmitter implements IBunnymenDB {
     return ([] as string[]).concat(...flattened.map((dataset) => dataset.peers))
   }
 
+  constructor() {
+    super()
+  }
+
   registerDatasets(key: string, ...datasets: IDataset[]) {
     this.datasets[key] = [...(this.datasets[key] || []), ...datasets]
     return true
