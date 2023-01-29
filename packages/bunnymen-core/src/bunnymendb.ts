@@ -42,7 +42,7 @@ export class BunnymenDB extends EventEmitter implements IBunnymenDB {
   }
 
   registerDatasets(key: string, ...datasets: IDataset[]) {
-    this.datasets[key] = [...(this.datasets[key] || []), ...datasets]
+    this.datasets[key] = datasets
     return true
   }
 
