@@ -2,25 +2,25 @@ import stringify from 'fast-json-stable-stringify'
 import { Node } from './node.js'
 import { IPayload, Transformer } from './types.js'
 
-export interface ILoaderOptions<TData = any, TNewData = TData> {
+export interface ILoaderOptions<TData = any, TRawData = TData> {
   /**
    * Used to transform new data coming in
    */
-  transformer?: Transformer<[TNewData], TData>
+  transformer?: Transformer<[TRawData], TData>
   /**
    * Used to aggregate data instead of overwriting
    */
   aggregator?: Transformer<[TData | undefined, TData], TData>
 }
 
-export interface ILoader<TData = any, TNewData = TData> {
+export interface ILoader<TData = any, TRawData = TData> {
   /**
    * Ignores aggregator and replaces any existing data.
    */
   init: (
     node: Node,
     topic: string,
-    data: TNewData,
+    data: TRawData,
   ) => Promise<{
     cid: string
     payload: IPayload<TData>
@@ -28,7 +28,7 @@ export interface ILoader<TData = any, TNewData = TData> {
   load: (
     node: Node,
     topic: string,
-    newData: TNewData,
+    rawData: TRawData,
     currentCID?: string,
   ) => Promise<{
     cid: string
@@ -46,10 +46,10 @@ export interface ILoader<TData = any, TNewData = TData> {
   download: (node: Node, topic: string, cid: string) => Promise<IPayload<TData>>
 }
 
-export class Loader<TData = any, TNewData = TData>
-  implements ILoader<TData, TNewData>
+export class Loader<TData = any, TRawData = TData>
+  implements ILoader<TData, TRawData>
 {
-  private transformer?: Transformer<[TNewData], TData>
+  private transformer?: Transformer<[TRawData], TData>
   private aggregator?: Transformer<[TData | undefined, TData], TData>
 
   constructor(options?: ILoaderOptions) {
@@ -60,14 +60,14 @@ export class Loader<TData = any, TNewData = TData>
   /**
    * Factory method to return a strongly typed instance.
    */
-  static create<TData = any, TNewData = any>(
-    options?: ILoaderOptions<TData, TNewData>,
-  ): Loader<TData, TNewData> {
+  static create<TData = any, TRawData = any>(
+    options?: ILoaderOptions<TData, TRawData>,
+  ): Loader<TData, TRawData> {
     return new Loader(options)
   }
 
-  private async prepData(newData: TNewData, currentData?: TData) {
-    let data: TData | TNewData = newData
+  private async prepData(newData: TRawData, currentData?: TData) {
+    let data: TData | TRawData = newData
     if (this.transformer) {
       data = this.transformer(data)
     }
@@ -77,7 +77,7 @@ export class Loader<TData = any, TNewData = TData>
     return data as TData
   }
 
-  async init(node: Node, topic: string, data: TNewData) {
+  async init(node: Node, topic: string, data: TRawData) {
     let transformedData = data as unknown as TData
     if (this.transformer) {
       transformedData = this.transformer(data)
@@ -93,7 +93,7 @@ export class Loader<TData = any, TNewData = TData>
   async load(
     node: Node,
     topic: string,
-    newData: TNewData,
+    rawData: TRawData,
     currentCID?: string,
   ) {
     let currentData: TData | undefined
@@ -102,7 +102,7 @@ export class Loader<TData = any, TNewData = TData>
       currentData = currentPayload.data
     }
     const payload = {
-      data: await this.prepData(newData, currentData),
+      data: await this.prepData(rawData, currentData),
       lastUpdated: Date.now(),
     }
     const cid = await node.upload(topic, stringify(payload))
