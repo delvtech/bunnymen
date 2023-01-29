@@ -2,6 +2,7 @@ import { gossipsub } from '@chainsafe/libp2p-gossipsub'
 import type { PeerIdStr } from '@chainsafe/libp2p-gossipsub/dist/src/types'
 import { noise } from '@chainsafe/libp2p-noise'
 import { bootstrap } from '@libp2p/bootstrap'
+import { kadDHT } from '@libp2p/kad-dht'
 import { mdns } from '@libp2p/mdns'
 import { mplex } from '@libp2p/mplex'
 import { pubsubPeerDiscovery } from '@libp2p/pubsub-peer-discovery'
@@ -131,12 +132,11 @@ export class Node extends EventEmitter {
   private configureLibp2p() {
     const transports = [webSockets()]
     const boostraplist = [
-      '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
-      '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',
-      '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmZa1sAxajnQjVM8WjWXoMbmPd7NsWhfKsPkErzpm9wGkp',
-      '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa',
-      '/dnsaddr/bootstrap.libp2p.io/ws/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt',
-      //'/dns4/relay.bunnymen.delvelabs.xyz/tcp/15002/wss/p2p/QmYBaiGTbr5pJ3irzWiWiCT74oHorFJYsH8zDbdo874Svi',
+      '/dns4/bootstrap.libp2p.io/wss/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
+      '/dns4/bootstrap.libp2p.io/wss/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',
+      '/dns4/bootstrap.libp2p.io/wss/p2p/QmZa1sAxajnQjVM8WjWXoMbmPd7NsWhfKsPkErzpm9wGkp',
+      '/dns4/bootstrap.libp2p.io/wss/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa',
+      '/dns4/bootstrap.libp2p.io/wss/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt',
     ]
 
     const peerDiscovery: any = [
@@ -175,16 +175,10 @@ export class Node extends EventEmitter {
         // libp2p will automatically attempt to dial to the signaling server so that it can
         // receive inbound connections from other peers
         listen: [
-          //'/dns4/wrtc-star1.par.dwebops.pub/tcp/443/wss/p2p-webrtc-star',
-          //'/dns4/wrtc-star2.sjc.dwebops.pub/tcp/443/wss/p2p-webrtc-star',
-          //'/dns4/star.bunnymen.delvelabs.xyz/tcp/443/wss/p2p-webrtc-star/',
-          //'/dns4/bunnymen-nix.delvelabs.xyz/tcp/443/wss/p2p-webrtc-star/',
-          // '/ip4/0.0.0.0/tcp/0/ws',
-          // '/ip4/0.0.0.0/tcp/0',
-          // '/ip4/127.0.0.1/tcp/0/ws',
-          // '/ip4/127.0.0.1/tcp/0',
-          // '/ip4/0.0.0.0/tcp/0/wss',
-          // '/ip4/0.0.0.0/tcp/0',
+          '/ip4/127.0.0.1/tcp/0/wss',
+          '/ip4/127.0.0.1/tcp/0',
+          '/ip4/0.0.0.0/tcp/0/wss',
+          '/ip4/0.0.0.0/tcp/0',
           '/ip4/127.0.0.1/tcp/13579/ws/p2p-webrtc-star/', // local webrtc-star server
         ],
       },
@@ -196,12 +190,13 @@ export class Node extends EventEmitter {
       transports,
       connectionEncryption: [noise()],
       streamMuxers: [mplex()],
+      dht: kadDHT(),
       peerDiscovery,
       relay: {
-        enabled: true,
+        enabled: true, // Allows you to dial and accept relayed connections. Does not make you a relay.
         hop: {
           enabled: true,
-          active: true,
+          active: false, // Allows you to be a relay for other peers
         },
       },
       pubsub: gossipsub({
