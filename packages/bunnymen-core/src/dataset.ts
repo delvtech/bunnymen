@@ -8,9 +8,7 @@ export type Fetcher<TData = any, TRawData = TData> = (
   currentData?: TData,
 ) => TRawData | Promise<TRawData>
 
-export type Validator<TData = any> = (
-  receivedData: TData,
-) => boolean | Promise<boolean>
+export type Validator = (receivedData: any) => boolean | Promise<boolean>
 
 // 'static' = never stale
 export type Frequency = number | 'static'
@@ -19,7 +17,7 @@ export interface IDatasetEvents<TData = any> {
   updated: (payload: IPayload<TData>) => void
 }
 
-export interface IDatasetOptions<TData = any, TRawData = TData> {
+export interface IDatasetOptions<TRawData = any> {
   initializer?: Fetcher<undefined, TRawData>
   initialContentId?: string
   /**
@@ -30,7 +28,7 @@ export interface IDatasetOptions<TData = any, TRawData = TData> {
   /**
    * Used to decide if data from a peer is valid and should be accepted.
    */
-  validator?: Validator<TData>
+  validator?: Validator
 }
 
 export interface IDataset<TData = any, TRawData = TData> extends EventEmitter {
@@ -57,7 +55,7 @@ export class Dataset<TData = any, TRawData = TData>
   // keep this around to rerun during validation
   private initializer: Fetcher<undefined, TRawData>
   private fetcher: Fetcher<TData, TRawData>
-  private validator: Validator<TData>
+  private validator: Validator
   private loader: ILoader<TData, TRawData>
   private currentCID?: string
   private topic: string = ''
@@ -90,7 +88,7 @@ export class Dataset<TData = any, TRawData = TData>
     node: Node,
     fetcher: Fetcher,
     loader: ILoader,
-    options?: IDatasetOptions<TData, TRawData>,
+    options?: IDatasetOptions<TRawData>,
   ) {
     super()
     const {
@@ -117,7 +115,7 @@ export class Dataset<TData = any, TRawData = TData>
     node: Node,
     fetcher: Fetcher<TData, TRawData>,
     loader: ILoader<TData, TRawData>,
-    options?: IDatasetOptions<TData, TRawData>,
+    options?: IDatasetOptions<TRawData>,
   ): Dataset<TData, TRawData> {
     return new Dataset(node, fetcher, loader, options)
   }
