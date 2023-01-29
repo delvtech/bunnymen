@@ -3,8 +3,8 @@
 export class Cache<TData extends any = any> {
   data: TData | undefined
 
-  get(): TData {
-    return this.data as TData
+  get(): TData | undefined {
+    return this.data
   }
   set(data: TData): boolean {
     this.data = data

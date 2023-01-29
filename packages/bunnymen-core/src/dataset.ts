@@ -182,12 +182,15 @@ export class Dataset<TData = any, TRawData = TData>
   }
 
   async get() {
-    if (!this.lastUpdated) {
+    if (!this.currentCID) {
       return this.fetchWith(this.initializer)
     }
     const cachedPayload = this.cache.get()
+    if (!cachedPayload) {
+      return this.loader.download(this.node, this.topic, this.currentCID)
+    }
     if (this.isStale()) {
-      return this.fetchWith(this.fetcher, cachedPayload.data)
+      return this.fetchWith(this.fetcher, cachedPayload?.data)
     }
     return cachedPayload
   }
