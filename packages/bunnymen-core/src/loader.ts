@@ -66,6 +66,13 @@ export class Loader<TData = any, TRawData = TData>
     return data as TData
   }
 
+  private async upload(node: Node, topic: string, payload: IPayload<TData>) {
+    const json = stringify(payload)
+    const cid = await node.upload(topic, json)
+    node.sendMessage(topic, cid)
+    return cid
+  }
+
   async load(
     node: Node,
     topic: string,
@@ -81,7 +88,7 @@ export class Loader<TData = any, TRawData = TData>
       data: await this.prepData(rawData, currentData),
       lastUpdated: Date.now(),
     }
-    const cid = await node.upload(topic, stringify(payload))
+    const cid = await this.upload(node, topic, payload)
     return { cid, payload }
   }
 
@@ -91,16 +98,22 @@ export class Loader<TData = any, TRawData = TData>
     oldData: TData,
     currentCID: string,
   ) {
-    let payload = await this.download(node, topic, currentCID)
+    const currentPayload = await this.download(node, topic, currentCID)
     if (!this.aggregator) {
       return {
         cid: currentCID,
-        payload,
+        payload: currentPayload,
       }
     }
-    payload.data = await this.aggregator(oldData, payload.data)
-    const cid = await node.upload(topic, stringify(payload))
-    return { cid, payload }
+    const newPayload = {
+      data: await this.aggregator(oldData, currentPayload.data),
+      lastUpdated: Date.now(),
+    }
+    const cid = await this.upload(node, topic, newPayload)
+    return {
+      cid,
+      payload: newPayload,
+    }
   }
 
   async download(node: Node, topic: string, cid: string) {

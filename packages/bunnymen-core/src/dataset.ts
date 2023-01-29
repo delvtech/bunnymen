@@ -199,7 +199,6 @@ export class Dataset<TData = any, TRawData = TData>
       newData,
       this.currentCID,
     )
-    await this.node.sendMessage(this.topic, cid)
     this.update(payload, cid)
     return payload
   }
