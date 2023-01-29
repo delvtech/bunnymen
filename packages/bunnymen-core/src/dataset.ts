@@ -53,11 +53,11 @@ export class Dataset<TData = any, TNewData = TData>
   private cache: Cache<IPayload<TData>>
   private untypedOn = this.on
   private untypedEmit = this.emit
-  public on = <K extends keyof IDatasetEvents<TData>>(
+  public override on = <K extends keyof IDatasetEvents<TData>>(
     event: K,
     listener: IDatasetEvents<TData>[K],
   ): this => this.untypedOn(event, listener)
-  public emit = <K extends keyof IDatasetEvents<TData>>(
+  public override emit = <K extends keyof IDatasetEvents<TData>>(
     event: K,
     ...args: Parameters<IDatasetEvents<TData>[K]>
   ): boolean => this.untypedEmit(event, ...args)
