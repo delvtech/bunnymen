@@ -53,7 +53,7 @@ Copy and paste the following:
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-22.11";
-    bunnymen.url = "github:element-fi/bunnymen";
+    bunnymen.url = "github:delv-tech/bunnymen";
   };
 
   outputs = inputs@{ nixpkgs, bunnymen, ... }:
